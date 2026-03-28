@@ -1,6 +1,8 @@
+import { createPortal } from "react-dom";
 import type { Member } from "../types";
 
 interface MemberDropdownProps {
+  anchorRect: DOMRect;
   members: Member[];
   selectedMemberIds: string[];
   hasLocked: boolean;
@@ -10,6 +12,7 @@ interface MemberDropdownProps {
 }
 
 export default function MemberDropdown({
+  anchorRect,
   members,
   selectedMemberIds,
   hasLocked,
@@ -20,13 +23,24 @@ export default function MemberDropdown({
   const activeMembers = members.filter((m) => m.active);
   const selectedSet = new Set(selectedMemberIds);
 
-  return (
+  // 画面右端に収まるよう left を調整
+  const dropdownWidth = 176; // min-w-[160px] + padding
+  const left = Math.min(
+    anchorRect.left,
+    window.innerWidth - dropdownWidth - 8
+  );
+  const top = anchorRect.bottom + 4;
+
+  return createPortal(
     <>
       {/* オーバーレイ */}
-      <div className="fixed inset-0 z-10" onClick={onClose} />
+      <div className="fixed inset-0 z-[200]" onClick={onClose} />
 
       {/* ドロップダウン */}
-      <div className="absolute top-full left-0 mt-1 z-20 bg-white rounded-xl shadow-xl border border-gray-200 py-1 min-w-[160px] animate-slide-down">
+      <div
+        className="fixed z-[201] bg-white rounded-xl shadow-xl border border-gray-200 py-1 min-w-[160px] animate-slide-down"
+        style={{ top, left }}
+      >
         {activeMembers.map((member) => {
           const isSelected = selectedSet.has(member.id);
           return (
@@ -109,6 +123,7 @@ export default function MemberDropdown({
           </button>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 }

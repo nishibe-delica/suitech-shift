@@ -53,6 +53,7 @@ export default function Calendar({
 }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date(fiscalYear, 3, 1));
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownAnchorRect, setDropdownAnchorRect] = useState<DOMRect | null>(null);
 
   // 年度切替時に4月へリセット
   useEffect(() => {
@@ -69,11 +70,13 @@ export default function Calendar({
   function prevMonth() {
     setCurrentDate(new Date(year, month - 1, 1));
     setOpenDropdown(null);
+    setDropdownAnchorRect(null);
   }
 
   function nextMonth() {
     setCurrentDate(new Date(year, month + 1, 1));
     setOpenDropdown(null);
+    setDropdownAnchorRect(null);
   }
 
   function getAssignmentsForDate(date: Date): Assignment[] {
@@ -186,9 +189,15 @@ export default function Calendar({
                     ? { backgroundColor: primaryMember.color }
                     : undefined
                 }
-                onClick={() => {
+                onClick={(e) => {
                   if (isInteractive) {
-                    setOpenDropdown(isDropdownOpen ? null : dateStr);
+                    if (isDropdownOpen) {
+                      setOpenDropdown(null);
+                      setDropdownAnchorRect(null);
+                    } else {
+                      setDropdownAnchorRect((e.currentTarget as HTMLElement).getBoundingClientRect());
+                      setOpenDropdown(dateStr);
+                    }
                   }
                 }}
               >
@@ -300,8 +309,9 @@ export default function Calendar({
                 )}
 
                 {/* ドロップダウン */}
-                {isDropdownOpen && isInteractive && (
+                {isDropdownOpen && isInteractive && dropdownAnchorRect && (
                   <MemberDropdown
+                    anchorRect={dropdownAnchorRect}
                     members={members}
                     selectedMemberIds={dateAssignments.filter((a) => a.type !== "marathon").map((a) => a.memberId)}
                     hasLocked={dateAssignments.some((a) => a.isLocked)}
@@ -311,8 +321,9 @@ export default function Calendar({
                     onUnlock={() => {
                       onUnlock(dateStr);
                       setOpenDropdown(null);
+                      setDropdownAnchorRect(null);
                     }}
-                    onClose={() => setOpenDropdown(null)}
+                    onClose={() => { setOpenDropdown(null); setDropdownAnchorRect(null); }}
                   />
                 )}
               </div>
