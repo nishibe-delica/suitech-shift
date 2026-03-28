@@ -8,7 +8,7 @@ import {
   isDutyDay,
 } from "../utils/calendar";
 import MemberDropdown from "./MemberDropdown";
-import type { Assignment, Member } from "../types";
+import type { Assignment, Member, HolidayPeriod } from "../types";
 
 const WEEKDAY_LABELS = ["月", "火", "水", "木", "金", "土", "日"];
 
@@ -16,15 +16,37 @@ interface CalendarProps {
   assignments: Assignment[];
   members: Member[];
   holidays: { date: string; name: string }[];
+  holidayPeriods: HolidayPeriod[];
+  companyWorkDays: string[];
   onAssignmentChange: (date: string, memberId: string) => void;
   onUnlock: (date: string) => void;
   fiscalYear: number;
+}
+
+/** 特別休暇期間内かどうかを判定（noDutyDates・全社出勤日を考慮） */
+function isHolidayPeriodDutyDay(
+  date: Date,
+  holidayPeriods: HolidayPeriod[],
+  companyWorkDays: string[]
+): boolean {
+  if (date.getDay() === 0) return false; // 日曜は対象外
+  const dateStr = formatDateStr(date);
+  if (companyWorkDays.includes(dateStr)) return false;
+  for (const period of holidayPeriods) {
+    if (dateStr >= period.start && dateStr <= period.end) {
+      if (period.noDutyDates.includes(dateStr)) return false;
+      return true;
+    }
+  }
+  return false;
 }
 
 export default function Calendar({
   assignments,
   members,
   holidays,
+  holidayPeriods,
+  companyWorkDays,
   onAssignmentChange,
   onUnlock,
   fiscalYear,
@@ -117,7 +139,7 @@ export default function Calendar({
             const sunday = isSunday(date);
             const saturday = isSaturday(date);
             const holidayName = getHolidayName(date, holidays);
-            const dutyDay = isDutyDay(date, holidays);
+            const dutyDay = isDutyDay(date, holidays) || isHolidayPeriodDutyDay(date, holidayPeriods, companyWorkDays);
             const dateAssignments = getAssignmentsForDate(date);
             const primaryAssignment = dateAssignments[0];
             const primaryMember = primaryAssignment
@@ -128,8 +150,12 @@ export default function Calendar({
             );
             const isDropdownOpen = openDropdown === dateStr;
 
+            const isInteractive = (dutyDay && !sunday) || isMarathonDay;
+
             let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
-            if (sunday) {
+            if (isMarathonDay) {
+              cellClasses += "bg-orange-50";
+            } else if (sunday) {
               cellClasses += "bg-gray-50";
             } else if (primaryMember && dutyDay) {
               cellClasses += "";
@@ -139,7 +165,7 @@ export default function Calendar({
               cellClasses += "bg-white";
             }
 
-            if (dutyDay && !sunday) {
+            if (isInteractive) {
               cellClasses +=
                 " cursor-pointer group hover:ring-2 hover:ring-inset hover:ring-brand-200 transition-all duration-150";
             }
@@ -149,12 +175,12 @@ export default function Calendar({
                 key={dateStr}
                 className={cellClasses}
                 style={
-                  primaryMember && dutyDay && !sunday
+                  primaryMember && dutyDay && !sunday && !isMarathonDay
                     ? { backgroundColor: primaryMember.color }
                     : undefined
                 }
                 onClick={() => {
-                  if (dutyDay && !sunday) {
+                  if (isInteractive) {
                     setOpenDropdown(isDropdownOpen ? null : dateStr);
                   }
                 }}
@@ -233,7 +259,7 @@ export default function Calendar({
                 )}
 
                 {/* ドロップダウン */}
-                {isDropdownOpen && dutyDay && !sunday && (
+                {isDropdownOpen && isInteractive && (
                   <MemberDropdown
                     members={members}
                     currentMemberId={primaryAssignment?.memberId ?? null}

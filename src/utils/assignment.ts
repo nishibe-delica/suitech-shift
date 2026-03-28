@@ -62,18 +62,16 @@ export function generateAssignments(
 
   const allDutyDays = getDutyDays(yearData);
 
-  // マラソン当番を固定
-  if (yearData.marathonDate && allDutyDays.includes(yearData.marathonDate)) {
-    if (!lockedDates.has(yearData.marathonDate)) {
-      const marathonMembers = activeMembers.filter((m) => m.isMarathonMember);
-      for (const m of marathonMembers) {
-        result.push({
-          date: yearData.marathonDate,
-          memberId: m.id,
-          type: "marathon",
-          isLocked: false,
-        });
-      }
+  // マラソン当番を固定（日曜でも割り振る）
+  if (yearData.marathonDate && !lockedDates.has(yearData.marathonDate)) {
+    const marathonMembers = activeMembers.filter((m) => m.isMarathonMember);
+    for (const m of marathonMembers) {
+      result.push({
+        date: yearData.marathonDate,
+        memberId: m.id,
+        type: "marathon",
+        isLocked: false,
+      });
     }
   }
 

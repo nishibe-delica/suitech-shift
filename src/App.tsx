@@ -156,6 +156,8 @@ function App() {
             assignments={assignments}
             members={members}
             holidays={yearData.holidays}
+            holidayPeriods={yearData.holidayPeriods}
+            companyWorkDays={yearData.companyWorkDays}
             onAssignmentChange={handleAssignmentChange}
             onUnlock={handleUnlock}
             fiscalYear={currentFiscalYear}
