@@ -149,6 +149,9 @@ export default function Calendar({
               (a) => a.type === "marathon"
             );
             const isCompanyWorkDay = companyWorkDays.includes(dateStr);
+            const periodLabel = holidayPeriods.find(
+              (p) => dateStr >= p.start && dateStr <= p.end
+            )?.label ?? null;
             const isDropdownOpen = openDropdown === dateStr;
 
             const isInteractive = (dutyDay && !sunday) || isMarathonDay;
@@ -223,6 +226,13 @@ export default function Calendar({
                 {holidayName && !sunday && (
                   <div className="text-[10px] text-red-400 truncate leading-tight mt-0.5">
                     {holidayName}
+                  </div>
+                )}
+
+                {/* 特別休暇期間ラベル */}
+                {periodLabel && !isCompanyWorkDay && (
+                  <div className="text-[10px] text-purple-500 font-bold truncate leading-tight mt-0.5">
+                    {periodLabel}
                   </div>
                 )}
 
