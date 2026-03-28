@@ -148,12 +148,15 @@ export default function Calendar({
             const isMarathonDay = dateAssignments.some(
               (a) => a.type === "marathon"
             );
+            const isCompanyWorkDay = companyWorkDays.includes(dateStr);
             const isDropdownOpen = openDropdown === dateStr;
 
             const isInteractive = (dutyDay && !sunday) || isMarathonDay;
 
             let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
-            if (isMarathonDay) {
+            if (isCompanyWorkDay) {
+              cellClasses += "bg-amber-50";
+            } else if (isMarathonDay) {
               cellClasses += "bg-orange-50";
             } else if (sunday) {
               cellClasses += "bg-gray-50";
@@ -242,8 +245,24 @@ export default function Calendar({
                   </div>
                 )}
 
+                {/* 全社出勤日（全員表示） */}
+                {isCompanyWorkDay && (
+                  <div className="mt-1 flex flex-col gap-0.5">
+                    <span className="text-[10px] text-amber-600 font-bold">全社出勤</span>
+                    {members.filter((m) => m.active).map((m) => (
+                      <span
+                        key={m.id}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-700 animate-fade-in"
+                        style={{ backgroundColor: m.color }}
+                      >
+                        {m.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
                 {/* 通常当番 */}
-                {!isMarathonDay && dutyDay && primaryMember && !sunday && (
+                {!isMarathonDay && !isCompanyWorkDay && dutyDay && primaryMember && !sunday && (
                   <div className="mt-2 text-center animate-fade-in">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold text-gray-800">
                       {primaryMember.name}
@@ -252,7 +271,7 @@ export default function Calendar({
                 )}
 
                 {/* 当番対象日マーカー（未割当） */}
-                {dutyDay && !primaryMember && !sunday && (
+                {dutyDay && !primaryMember && !sunday && !isCompanyWorkDay && (
                   <div className="mt-2 text-center">
                     <span className="text-[10px] text-gray-400">当番</span>
                   </div>
