@@ -154,7 +154,8 @@ export default function Calendar({
             )?.label ?? null;
             const isDropdownOpen = openDropdown === dateStr;
 
-            const isInteractive = (dutyDay && !sunday) || isMarathonDay;
+            const isInHolidayPeriod = periodLabel !== null && !isCompanyWorkDay;
+            const isInteractive = (dutyDay && !sunday) || isMarathonDay || isInHolidayPeriod;
 
             let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
             if (isCompanyWorkDay) {
@@ -239,6 +240,7 @@ export default function Calendar({
                 {/* マラソン当番（3名表示） */}
                 {isMarathonDay && (
                   <div className="mt-1 flex flex-col gap-0.5">
+                    <span className="text-[10px] text-orange-600 font-bold">揖斐川マラソン</span>
                     {dateAssignments.map((a) => {
                       const m = getMember(a.memberId);
                       if (!m) return null;
@@ -272,7 +274,7 @@ export default function Calendar({
                 )}
 
                 {/* 通常当番（複数人対応） */}
-                {!isMarathonDay && !isCompanyWorkDay && dutyDay && dateAssignments.length > 0 && !sunday && (
+                {!isMarathonDay && !isCompanyWorkDay && (dutyDay || isInHolidayPeriod) && dateAssignments.length > 0 && (
                   <div className="mt-1 flex flex-col gap-0.5 animate-fade-in">
                     {dateAssignments.map((a) => {
                       const m = getMember(a.memberId);
@@ -291,7 +293,7 @@ export default function Calendar({
                 )}
 
                 {/* 当番対象日マーカー（未割当） */}
-                {dutyDay && !primaryMember && !sunday && !isCompanyWorkDay && (
+                {(dutyDay || isInHolidayPeriod) && !primaryMember && !isCompanyWorkDay && (
                   <div className="mt-2 text-center">
                     <span className="text-[10px] text-gray-400">当番</span>
                   </div>
