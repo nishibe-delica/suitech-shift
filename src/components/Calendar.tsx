@@ -93,7 +93,7 @@ export default function Calendar({
           {WEEKDAY_LABELS.map((label, i) => (
             <div
               key={label}
-              className={`py-2.5 text-center text-xs font-semibold uppercase tracking-wider ${
+              className={`py-3 text-center text-sm font-bold tracking-wider ${
                 i === 5
                   ? "bg-blue-50 text-blue-500"
                   : i === 6
@@ -109,7 +109,7 @@ export default function Calendar({
           {days.map((date, i) => {
             if (!date) {
               return (
-                <div key={`empty-${i}`} className="min-h-[5.5rem] bg-white" />
+                <div key={`empty-${i}`} className="min-h-[6.5rem] bg-white" />
               );
             }
 
@@ -128,7 +128,7 @@ export default function Calendar({
             );
             const isDropdownOpen = openDropdown === dateStr;
 
-            let cellClasses = "min-h-[5.5rem] p-2 relative ";
+            let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
             if (sunday) {
               cellClasses += "bg-gray-50";
             } else if (primaryMember && dutyDay) {
@@ -162,7 +162,7 @@ export default function Calendar({
                 {/* 日付番号 */}
                 <div className="flex items-start justify-between">
                   <span
-                    className={`text-sm font-medium ${
+                    className={`text-base font-semibold ${
                       sunday
                         ? "text-gray-400"
                         : saturday
@@ -219,7 +219,7 @@ export default function Calendar({
                 {/* 通常当番 */}
                 {!isMarathonDay && dutyDay && primaryMember && !sunday && (
                   <div className="mt-2 text-center animate-fade-in">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold text-gray-800">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold text-gray-800">
                       {primaryMember.name}
                     </span>
                   </div>

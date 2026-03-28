@@ -132,7 +132,7 @@ function App() {
         onYearChange={handleYearChange}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 print:p-0 print:max-w-none">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 print:p-0 print:max-w-none">
         {/* メンバーレジェンドバー */}
         <div className="print:hidden">
           <MemberLegendBar
