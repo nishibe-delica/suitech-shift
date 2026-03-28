@@ -155,7 +155,7 @@ export default function Calendar({
             const isDropdownOpen = openDropdown === dateStr;
 
             const isInHolidayPeriod = periodLabel !== null && !isCompanyWorkDay;
-            const isInteractive = (dutyDay && !sunday) || isMarathonDay || isInHolidayPeriod;
+            const isInteractive = isMarathonDay || (!sunday && !isCompanyWorkDay);
 
             let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
             if (isCompanyWorkDay) {
@@ -182,7 +182,7 @@ export default function Calendar({
                 key={dateStr}
                 className={cellClasses}
                 style={
-                  primaryMember && dutyDay && !sunday && !isMarathonDay && !isCompanyWorkDay && dateAssignments.length === 1
+                  primaryMember && !sunday && !isMarathonDay && !isCompanyWorkDay && dateAssignments.length === 1
                     ? { backgroundColor: primaryMember.color }
                     : undefined
                 }
@@ -274,7 +274,7 @@ export default function Calendar({
                 )}
 
                 {/* 通常当番（複数人対応） */}
-                {!isMarathonDay && !isCompanyWorkDay && (dutyDay || isInHolidayPeriod) && dateAssignments.length > 0 && (
+                {!isMarathonDay && !isCompanyWorkDay && dateAssignments.length > 0 && (
                   <div className="mt-1 flex flex-col gap-0.5 animate-fade-in">
                     {dateAssignments.map((a) => {
                       const m = getMember(a.memberId);

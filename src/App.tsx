@@ -85,24 +85,27 @@ function App() {
   }
 
   function handleAssignmentToggle(date: string, memberId: string) {
-    const existing = assignments.filter((a) => a.date === date && a.type !== "marathon");
-    const isAlreadyAssigned = existing.some((a) => a.memberId === memberId);
+    const isAlreadyAssigned = assignments.some(
+      (a) => a.date === date && a.memberId === memberId && a.type !== "marathon"
+    );
 
-    let updatedAll: Assignment[];
     if (isAlreadyAssigned) {
-      // 選択解除: そのメンバーのアサインメントを削除
-      updatedAll = assignments.filter(
-        (a) => !(a.date === date && a.memberId === memberId && a.type !== "marathon")
+      // 選択解除: そのメンバーのみ削除（他の日は変更しない）
+      setAssignments(
+        assignments.filter(
+          (a) => !(a.date === date && a.memberId === memberId && a.type !== "marathon")
+        )
       );
     } else {
-      // 選択追加: 新しいアサインメントを追加
-      updatedAll = [
-        ...assignments,
+      // 選択追加: 同じ日の既存アサインをロック済みにした上で追加（自動再割り振り時も保持）
+      const withLockedExisting = assignments.map((a) =>
+        a.date === date && a.type !== "marathon" ? { ...a, isLocked: true } : a
+      );
+      setAssignments([
+        ...withLockedExisting,
         { date, memberId, type: "manual" as const, isLocked: true },
-      ];
+      ]);
     }
-    const locked = updatedAll.filter((a) => a.isLocked);
-    setAssignments(generateAssignments(members, yearData, locked));
   }
 
   function handleUnlock(date: string) {
