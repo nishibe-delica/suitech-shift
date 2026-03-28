@@ -18,7 +18,7 @@ interface CalendarProps {
   holidays: { date: string; name: string }[];
   holidayPeriods: HolidayPeriod[];
   companyWorkDays: string[];
-  onAssignmentChange: (date: string, memberId: string) => void;
+  onAssignmentToggle: (date: string, memberId: string) => void;
   onUnlock: (date: string) => void;
   fiscalYear: number;
 }
@@ -47,7 +47,7 @@ export default function Calendar({
   holidays,
   holidayPeriods,
   companyWorkDays,
-  onAssignmentChange,
+  onAssignmentToggle,
   onUnlock,
   fiscalYear,
 }: CalendarProps) {
@@ -181,7 +181,7 @@ export default function Calendar({
                 key={dateStr}
                 className={cellClasses}
                 style={
-                  primaryMember && dutyDay && !sunday && !isMarathonDay
+                  primaryMember && dutyDay && !sunday && !isMarathonDay && !isCompanyWorkDay && dateAssignments.length === 1
                     ? { backgroundColor: primaryMember.color }
                     : undefined
                 }
@@ -271,12 +271,22 @@ export default function Calendar({
                   </div>
                 )}
 
-                {/* 通常当番 */}
-                {!isMarathonDay && !isCompanyWorkDay && dutyDay && primaryMember && !sunday && (
-                  <div className="mt-2 text-center animate-fade-in">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold text-gray-800">
-                      {primaryMember.name}
-                    </span>
+                {/* 通常当番（複数人対応） */}
+                {!isMarathonDay && !isCompanyWorkDay && dutyDay && dateAssignments.length > 0 && !sunday && (
+                  <div className="mt-1 flex flex-col gap-0.5 animate-fade-in">
+                    {dateAssignments.map((a) => {
+                      const m = getMember(a.memberId);
+                      if (!m) return null;
+                      return (
+                        <span
+                          key={a.memberId}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-700"
+                          style={{ backgroundColor: m.color }}
+                        >
+                          {m.name}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
 
@@ -291,11 +301,10 @@ export default function Calendar({
                 {isDropdownOpen && isInteractive && (
                   <MemberDropdown
                     members={members}
-                    currentMemberId={primaryAssignment?.memberId ?? null}
-                    isLocked={primaryAssignment?.isLocked ?? false}
-                    onSelect={(memberId) => {
-                      onAssignmentChange(dateStr, memberId);
-                      setOpenDropdown(null);
+                    selectedMemberIds={dateAssignments.filter((a) => a.type !== "marathon").map((a) => a.memberId)}
+                    hasLocked={dateAssignments.some((a) => a.isLocked)}
+                    onToggle={(memberId) => {
+                      onAssignmentToggle(dateStr, memberId);
                     }}
                     onUnlock={() => {
                       onUnlock(dateStr);

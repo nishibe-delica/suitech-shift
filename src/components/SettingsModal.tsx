@@ -39,6 +39,12 @@ export default function SettingsModal({
   const [newPeriodStart, setNewPeriodStart] = useState("");
   const [newPeriodEnd, setNewPeriodEnd] = useState("");
 
+  // 特別休暇編集
+  const [editingPeriodId, setEditingPeriodId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+
   // 全社出勤日フォーム
   const [newWorkDay, setNewWorkDay] = useState("");
 
@@ -56,6 +62,31 @@ export default function SettingsModal({
     setNewPeriodLabel("");
     setNewPeriodStart("");
     setNewPeriodEnd("");
+  }
+
+  function startEditPeriod(period: HolidayPeriod) {
+    setEditingPeriodId(period.id);
+    setEditLabel(period.label);
+    setEditStart(period.start);
+    setEditEnd(period.end);
+  }
+
+  function saveEditPeriod() {
+    if (!editingPeriodId || !editLabel || !editStart || !editEnd || editEnd < editStart) return;
+    setDraft((d) => ({
+      ...d,
+      holidayPeriods: d.holidayPeriods.map((p): HolidayPeriod => {
+        if (p.id !== editingPeriodId) return p;
+        // 範囲外の noDutyDates を除去
+        const filtered = p.noDutyDates.filter((nd) => nd >= editStart && nd <= editEnd);
+        return { ...p, label: editLabel, start: editStart, end: editEnd, noDutyDates: filtered };
+      }),
+    }));
+    setEditingPeriodId(null);
+  }
+
+  function cancelEditPeriod() {
+    setEditingPeriodId(null);
   }
 
   function removeHolidayPeriod(id: string) {
@@ -235,22 +266,74 @@ export default function SettingsModal({
                     return (
                       <div key={period.id} className="border border-gray-200 rounded-xl overflow-hidden">
                         {/* 期間ヘッダー */}
-                        <div className="flex items-center justify-between bg-blue-50 px-6 py-4">
-                          <div>
-                            <span className="text-lg font-bold text-gray-700">{period.label}</span>
-                            <span className="text-base text-gray-500 ml-3">
-                              {period.start.replace(/-/g, "/")} 〜 {period.end.replace(/-/g, "/")}
-                            </span>
+                        {editingPeriodId === period.id ? (
+                          <div className="bg-blue-50 px-6 py-4 space-y-3">
+                            <input
+                              type="text"
+                              value={editLabel}
+                              onChange={(e) => setEditLabel(e.target.value)}
+                              className="w-full text-lg font-bold border-2 border-brand-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                            />
+                            <div className="grid grid-cols-2 gap-3">
+                              <input
+                                type="date"
+                                value={editStart}
+                                onChange={(e) => setEditStart(e.target.value)}
+                                className="text-base border-2 border-brand-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                              />
+                              <input
+                                type="date"
+                                value={editEnd}
+                                onChange={(e) => setEditEnd(e.target.value)}
+                                className="text-base border-2 border-brand-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-300"
+                              />
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={cancelEditPeriod}
+                                className="px-5 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-lg cursor-pointer"
+                              >
+                                キャンセル
+                              </button>
+                              <button
+                                onClick={saveEditPeriod}
+                                disabled={!editLabel || !editStart || !editEnd || editEnd < editStart}
+                                className="px-5 py-2 text-sm font-bold bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:opacity-40 cursor-pointer"
+                              >
+                                保存
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => removeHolidayPeriod(period.id)}
-                            className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
-                          >
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
+                        ) : (
+                          <div className="flex items-center justify-between bg-blue-50 px-6 py-4">
+                            <div>
+                              <span className="text-lg font-bold text-gray-700">{period.label}</span>
+                              <span className="text-base text-gray-500 ml-3">
+                                {period.start.replace(/-/g, "/")} 〜 {period.end.replace(/-/g, "/")}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => startEditPeriod(period)}
+                                className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:bg-blue-100 hover:text-brand-600 transition-colors cursor-pointer"
+                                title="編集"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => removeHolidayPeriod(period.id)}
+                                className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
+                                title="削除"
+                              >
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                         {/* 日別リスト */}
                         <div className="divide-y divide-gray-50">

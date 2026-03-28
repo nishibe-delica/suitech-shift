@@ -84,16 +84,24 @@ function App() {
     setAssignments(generateAssignments(members, yearData, locked));
   }
 
-  function handleAssignmentChange(date: string, memberId: string) {
-    const updated = assignments.map((a) =>
-      a.date === date && a.type !== "marathon"
-        ? { ...a, memberId, type: "manual" as const, isLocked: true }
-        : a
-    );
-    if (!assignments.some((a) => a.date === date && a.type !== "marathon")) {
-      updated.push({ date, memberId, type: "manual", isLocked: true });
+  function handleAssignmentToggle(date: string, memberId: string) {
+    const existing = assignments.filter((a) => a.date === date && a.type !== "marathon");
+    const isAlreadyAssigned = existing.some((a) => a.memberId === memberId);
+
+    let updatedAll: Assignment[];
+    if (isAlreadyAssigned) {
+      // 選択解除: そのメンバーのアサインメントを削除
+      updatedAll = assignments.filter(
+        (a) => !(a.date === date && a.memberId === memberId && a.type !== "marathon")
+      );
+    } else {
+      // 選択追加: 新しいアサインメントを追加
+      updatedAll = [
+        ...assignments,
+        { date, memberId, type: "manual" as const, isLocked: true },
+      ];
     }
-    const locked = updated.filter((a) => a.isLocked);
+    const locked = updatedAll.filter((a) => a.isLocked);
     setAssignments(generateAssignments(members, yearData, locked));
   }
 
@@ -158,7 +166,7 @@ function App() {
             holidays={yearData.holidays}
             holidayPeriods={yearData.holidayPeriods}
             companyWorkDays={yearData.companyWorkDays}
-            onAssignmentChange={handleAssignmentChange}
+            onAssignmentToggle={handleAssignmentToggle}
             onUnlock={handleUnlock}
             fiscalYear={currentFiscalYear}
           />
