@@ -234,14 +234,14 @@ export default function Calendar({
 
                 {/* 祝日名 */}
                 {holidayName && !sunday && (
-                  <div className="text-[10px] text-red-400 truncate leading-tight mt-0.5">
+                  <div className="text-xs text-red-400 truncate leading-tight mt-0.5">
                     {holidayName}
                   </div>
                 )}
 
                 {/* 特別休暇期間ラベル */}
                 {periodLabel && !isCompanyWorkDay && (
-                  <div className="text-[10px] text-purple-500 font-bold truncate leading-tight mt-0.5">
+                  <div className="text-xs text-purple-500 font-bold truncate leading-tight mt-0.5">
                     {periodLabel}
                   </div>
                 )}
@@ -249,14 +249,14 @@ export default function Calendar({
                 {/* マラソン当番（3名表示） */}
                 {isMarathonDay && (
                   <div className="mt-1 flex flex-col gap-0.5">
-                    <span className="text-[10px] text-orange-600 font-bold">揖斐川マラソン</span>
+                    <span className="text-xs text-orange-600 font-bold">揖斐川マラソン</span>
                     {dateAssignments.map((a) => {
                       const m = getMember(a.memberId);
                       if (!m) return null;
                       return (
                         <span
                           key={a.memberId}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-700 animate-fade-in"
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold text-gray-700 animate-fade-in"
                           style={{ backgroundColor: m.color }}
                         >
                           {m.name}
@@ -269,11 +269,11 @@ export default function Calendar({
                 {/* 全社出勤日（全員表示） */}
                 {isCompanyWorkDay && (
                   <div className="mt-1 flex flex-col gap-0.5">
-                    <span className="text-[10px] text-amber-600 font-bold">全社出勤</span>
+                    <span className="text-xs text-amber-600 font-bold">全社出勤</span>
                     {members.filter((m) => m.active).map((m) => (
                       <span
                         key={m.id}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-700 animate-fade-in"
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold text-gray-700 animate-fade-in"
                         style={{ backgroundColor: m.color }}
                       >
                         {m.name}
@@ -291,7 +291,7 @@ export default function Calendar({
                       return (
                         <span
                           key={a.memberId}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-gray-700"
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold text-gray-700"
                           style={{ backgroundColor: m.color }}
                         >
                           {m.name}
@@ -304,7 +304,7 @@ export default function Calendar({
                 {/* 当番対象日マーカー（未割当） */}
                 {(dutyDay || isInHolidayPeriod) && !primaryMember && !isCompanyWorkDay && (
                   <div className="mt-2 text-center">
-                    <span className="text-[10px] text-gray-400">当番</span>
+                    <span className="text-xs text-gray-400">当番</span>
                   </div>
                 )}
 

@@ -23,32 +23,30 @@ export default function Header({
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-4">
         <div className="flex items-center justify-between gap-4">
           {/* タイトル + 年度切替 */}
-          <div className="flex items-center gap-4 min-w-0">
+          <div className="flex items-center gap-5 min-w-0">
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight truncate">
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 休日当番シフト管理
               </h1>
-              <p className="text-white/60 text-xs mt-0.5 hidden sm:block">
-                {yearData.startDate.replace(/-/g, "/")} 〜{" "}
-                {yearData.endDate.replace(/-/g, "/")}
+              <p className="text-white/70 text-sm mt-0.5 hidden sm:block font-medium">
+                スイテック &nbsp;·&nbsp; {yearData.startDate.slice(0, 7).replace("-", "/")} 〜 {yearData.endDate.slice(0, 7).replace("-", "/")}
               </p>
             </div>
 
-            {/* 年度セレクター */}
-            <div className="flex items-center bg-white/10 rounded-xl p-1 gap-1 shrink-0">
-              {SUPPORTED_YEARS.map((year) => (
-                <button
-                  key={year}
-                  onClick={() => onYearChange(year)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer ${
-                    yearData.fiscalYear === year
-                      ? "bg-white text-brand-700 shadow-sm"
-                      : "text-white/80 hover:text-white hover:bg-white/10"
-                  }`}
-                >
-                  {year}年度
-                </button>
-              ))}
+            {/* 年度セレクター（ドロップダウン） */}
+            <div className="shrink-0">
+              <select
+                value={yearData.fiscalYear}
+                onChange={(e) => onYearChange(Number(e.target.value))}
+                className="bg-white/15 text-white font-bold text-sm rounded-xl px-4 py-2 border border-white/20 hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/40 cursor-pointer appearance-none pr-8 transition-all"
+                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19.5 8.25l-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 8px center", backgroundSize: "16px" }}
+              >
+                {SUPPORTED_YEARS.map((year) => (
+                  <option key={year} value={year} className="bg-brand-700 text-white">
+                    {year}年度
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

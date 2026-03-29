@@ -186,20 +186,6 @@ function App() {
           </div>
         </div>
 
-        {/* 印刷フッター */}
-        <div className="hidden print:flex print:mt-4 gap-8 border-t pt-3">
-          {members.filter((m) => m.active).map((member) => (
-            <div key={member.id} className="flex items-center gap-2">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: member.color }}
-              />
-              <span className="text-sm">
-                {member.name}: {dutyCounts[member.id] ?? 0}回
-              </span>
-            </div>
-          ))}
-        </div>
       </main>
 
       {/* 設定モーダル */}

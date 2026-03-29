@@ -47,6 +47,16 @@ export default function SettingsModal({
 
   // 全社出勤日フォーム
   const [newWorkDay, setNewWorkDay] = useState("");
+  const [editingWorkDay, setEditingWorkDay] = useState<string | null>(null);
+  const [editWorkDayDate, setEditWorkDayDate] = useState("");
+
+  // 特別休暇テンプレート
+  const fy = draft.fiscalYear;
+  const periodTemplates = [
+    { label: "GW", start: `${fy}-04-29`, end: `${fy}-05-06` },
+    { label: "夏季休暇", start: `${fy}-08-10`, end: `${fy}-08-15` },
+    { label: "年末年始", start: `${fy}-12-28`, end: `${fy + 1}-01-04` },
+  ];
 
   function addHolidayPeriod() {
     if (!newPeriodStart || !newPeriodEnd || !newPeriodLabel) return;
@@ -110,6 +120,25 @@ export default function SettingsModal({
         };
       }),
     }));
+  }
+
+  function startEditWorkDay(date: string) {
+    setEditingWorkDay(date);
+    setEditWorkDayDate(date);
+  }
+
+  function saveEditWorkDay() {
+    if (!editWorkDayDate || editWorkDayDate === editingWorkDay) {
+      setEditingWorkDay(null);
+      return;
+    }
+    setDraft((d) => ({
+      ...d,
+      companyWorkDays: d.companyWorkDays
+        .map((x) => (x === editingWorkDay ? editWorkDayDate : x))
+        .sort(),
+    }));
+    setEditingWorkDay(null);
   }
 
   function addWorkDay() {
@@ -201,6 +230,30 @@ export default function SettingsModal({
           {/* ━━━ 特別休暇タブ ━━━ */}
           {tab === "special" && (
             <>
+              {/* テンプレートボタン */}
+              <div className="bg-brand-50 rounded-2xl p-5 space-y-3">
+                <p className="text-base font-bold text-brand-700">よく使う期間をクリックで自動入力</p>
+                <div className="flex gap-3 flex-wrap">
+                  {periodTemplates.map((t) => (
+                    <button
+                      key={t.label}
+                      onClick={() => {
+                        setNewPeriodLabel(t.label);
+                        setNewPeriodStart(t.start);
+                        setNewPeriodEnd(t.end);
+                      }}
+                      className="px-5 py-2.5 bg-white border-2 border-brand-200 text-brand-700 font-bold rounded-xl hover:bg-brand-100 hover:border-brand-400 transition-all cursor-pointer text-base"
+                    >
+                      {t.label}
+                      <span className="ml-2 text-xs text-brand-400 font-normal">
+                        {t.start.slice(5).replace("-", "/")} 〜 {t.end.slice(5).replace("-", "/")}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-brand-400">※ 日程は年度によって異なります。クリック後に「追加」フォームで確認・調整してください。</p>
+              </div>
+
               {/* 追加フォーム */}
               <div className="bg-gray-50 rounded-2xl p-8 space-y-5">
                 <p className="text-lg font-bold text-gray-700">新しい期間を追加</p>
@@ -455,19 +508,48 @@ export default function SettingsModal({
               ) : (
                 <div className="space-y-3">
                   {draft.companyWorkDays.map((date) => (
-                    <div
-                      key={date}
-                      className="flex items-center justify-between bg-amber-50 rounded-xl px-6 py-4"
-                    >
-                      <span className="text-lg text-gray-700">{date.replace(/-/g, "/")}</span>
-                      <button
-                        onClick={() => removeWorkDay(date)}
-                        className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+                    <div key={date} className="bg-amber-50 rounded-xl px-6 py-4">
+                      {editingWorkDay === date ? (
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="date"
+                            value={editWorkDayDate}
+                            onChange={(e) => setEditWorkDayDate(e.target.value)}
+                            className="flex-1 text-base border-2 border-amber-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-amber-300"
+                          />
+                          <button
+                            onClick={saveEditWorkDay}
+                            className="px-4 py-2 text-sm font-bold bg-brand-600 text-white rounded-lg hover:bg-brand-700 cursor-pointer"
+                          >保存</button>
+                          <button
+                            onClick={() => setEditingWorkDay(null)}
+                            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-200 rounded-lg cursor-pointer"
+                          >取消</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <span className="text-lg text-gray-700">{date.replace(/-/g, "/")}</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => startEditWorkDay(date)}
+                              className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:bg-amber-100 hover:text-brand-600 transition-colors cursor-pointer"
+                              title="日付を変更"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => removeWorkDay(date)}
+                              className="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors cursor-pointer"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
