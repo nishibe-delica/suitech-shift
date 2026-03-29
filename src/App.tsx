@@ -134,29 +134,29 @@ function App() {
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 print:p-0 print:max-w-none">
         {/* ビュー切替タブ */}
-        <div className="print:hidden flex gap-1 mb-6 border-b border-gray-200">
+        <div className="print:hidden inline-flex bg-gray-100 rounded-2xl p-1.5 gap-1.5 mb-6 shadow-inner">
           <button
             onClick={() => setViewMode("calendar")}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+            className={`flex items-center gap-3 px-8 py-3.5 rounded-xl text-base font-bold transition-all duration-200 cursor-pointer ${
               viewMode === "calendar"
-                ? "border-brand-600 text-brand-700"
-                : "border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300"
+                ? "bg-white text-brand-700 shadow-md"
+                : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5m-9-6h.008v.008H12V12zm0 3h.008v.008H12v-.008zm0 3h.008v.008H12v-.008zm-4.5-6h.008v.008H7.5V12zm0 3h.008v.008H7.5v-.008zm0 3h.008v.008H7.5v-.008zm9-6h.008v.008H16.5V12zm0 3h.008v.008H16.5v-.008z" />
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 9v7.5" />
             </svg>
             月カレンダー
           </button>
           <button
             onClick={() => setViewMode("yearly")}
-            className={`flex items-center gap-2 px-5 py-3 text-sm font-semibold border-b-2 -mb-px transition-colors cursor-pointer ${
+            className={`flex items-center gap-3 px-8 py-3.5 rounded-xl text-base font-bold transition-all duration-200 cursor-pointer ${
               viewMode === "yearly"
-                ? "border-brand-600 text-brand-700"
-                : "border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-300"
+                ? "bg-white text-brand-700 shadow-md"
+                : "text-gray-400 hover:text-gray-600"
             }`}
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
             年間一覧
