@@ -166,7 +166,7 @@ export default function Calendar({
             } else if (isMarathonDay) {
               cellClasses += "bg-orange-50";
             } else if (sunday) {
-              cellClasses += "bg-red-100";
+              cellClasses += Math.floor(i / 7) % 2 === 0 ? "bg-red-50" : "bg-red-100";
             } else if (primaryMember && dutyDay) {
               cellClasses += "";
             } else if (saturday) {
@@ -239,12 +239,6 @@ export default function Calendar({
                   </div>
                 )}
 
-                {/* 日曜「休み」ラベル */}
-                {sunday && (
-                  <div className="mt-1 text-xs font-bold text-red-400">
-                    休み
-                  </div>
-                )}
 
                 {/* 特別休暇期間ラベル */}
                 {periodLabel && !isCompanyWorkDay && (
