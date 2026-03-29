@@ -38,6 +38,50 @@ export function loadFromStorage(fiscalYear: number): StorageData | null {
   }
 }
 
+// ━━ クラウド同期（Google Apps Script 経由） ━━
+
+const GAS_URL_KEY = "suitech-shift-gas-url";
+
+export function saveGasUrl(url: string) {
+  localStorage.setItem(GAS_URL_KEY, url);
+}
+
+export function loadGasUrl(): string {
+  return localStorage.getItem(GAS_URL_KEY) ?? "";
+}
+
+/** 全年度データをクラウドへ保存（no-cors で POST） */
+export async function cloudPushAll(gasUrl: string): Promise<void> {
+  const allData: Record<string, unknown> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key?.startsWith(STORAGE_KEY_PREFIX)) {
+      const raw = localStorage.getItem(key);
+      if (raw) allData[key] = JSON.parse(raw);
+    }
+  }
+  await fetch(gasUrl, {
+    method: "POST",
+    mode: "no-cors", // Apps Script の 302 リダイレクトを回避
+    body: JSON.stringify(allData),
+  });
+}
+
+/** クラウドから全年度データを取得して localStorage へ書き込む */
+export async function cloudPullAll(gasUrl: string): Promise<void> {
+  const res = await fetch(`${gasUrl}?t=${Date.now()}`);
+  if (!res.ok) throw new Error(`サーバーエラー: HTTP ${res.status}`);
+  const allData = await res.json() as Record<string, unknown>;
+  if (Object.keys(allData).length === 0) throw new Error("クラウドにデータがありません");
+  for (const [key, value] of Object.entries(allData)) {
+    if (key.startsWith(STORAGE_KEY_PREFIX)) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  }
+}
+
+// ━━ JSON バックアップ ━━
+
 export function exportJSON(yearData: YearData, assignments: Assignment[]) {
   const data: StorageData = { yearData, assignments };
   const blob = new Blob([JSON.stringify(data, null, 2)], {

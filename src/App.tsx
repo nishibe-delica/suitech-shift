@@ -17,6 +17,12 @@ import {
 import {
   saveToStorage,
   loadFromStorage,
+  exportJSON,
+  importJSON,
+  cloudPushAll,
+  cloudPullAll,
+  saveGasUrl,
+  loadGasUrl,
 } from "./utils/storage";
 import type { Assignment, Member, YearData } from "./types";
 
@@ -41,6 +47,7 @@ function App() {
   );
   const [showSettings, setShowSettings] = useState(false);
   const [viewMode, setViewMode] = useState<"calendar" | "yearly">("calendar");
+  const [gasUrl, setGasUrl] = useState(() => loadGasUrl());
 
   // 変更のたびにlocalStorageへ自動保存
   useEffect(() => {
@@ -119,6 +126,45 @@ function App() {
     // marathon assignments are always regenerated from marathonDate — exclude them from locked
     const locked = assignments.filter((a) => a.isLocked && a.type !== "marathon");
     setAssignments(generateAssignments(members, updated, locked));
+  }
+
+  function handleImport(file: File) {
+    importJSON(file)
+      .then((data) => {
+        const importedYear = data.yearData.fiscalYear;
+        setCurrentFiscalYear(importedYear);
+        setYearData(data.yearData);
+        setAssignments(data.assignments);
+        saveToStorage(data.yearData, data.assignments);
+      })
+      .catch((err) => alert(err.message));
+  }
+
+  function handleGasUrlChange(url: string) {
+    setGasUrl(url);
+    saveGasUrl(url);
+  }
+
+  async function handleCloudPush() {
+    try {
+      saveToStorage(yearData, assignments);
+      await cloudPushAll(gasUrl);
+      alert("クラウドへ保存しました");
+    } catch (err) {
+      alert(`保存に失敗しました: ${err instanceof Error ? err.message : err}`);
+    }
+  }
+
+  async function handleCloudPull() {
+    try {
+      await cloudPullAll(gasUrl);
+      const loaded = loadYear(currentFiscalYear);
+      setYearData(loaded.yearData);
+      setAssignments(loaded.assignments);
+      alert("クラウドから読み込みました");
+    } catch (err) {
+      alert(`読込に失敗しました: ${err instanceof Error ? err.message : err}`);
+    }
   }
 
   return (
@@ -225,6 +271,12 @@ function App() {
           yearData={yearData}
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
+          onExport={() => exportJSON(yearData, assignments)}
+          onImport={handleImport}
+          gasUrl={gasUrl}
+          onGasUrlChange={handleGasUrlChange}
+          onCloudPush={handleCloudPush}
+          onCloudPull={handleCloudPull}
         />
       )}
     </div>
