@@ -4,6 +4,7 @@ import MemberLegendBar from "./components/MemberLegendBar";
 import Calendar from "./components/Calendar";
 import SummaryPanel from "./components/SummaryPanel";
 import SettingsModal from "./components/SettingsModal";
+import YearlyView from "./components/YearlyView";
 import { defaultMembers } from "./data/members";
 import { getDefaultYearData } from "./data/yearDefaults";
 import {
@@ -39,6 +40,7 @@ function App() {
     () => loadYear(INITIAL_FISCAL_YEAR).assignments
   );
   const [showSettings, setShowSettings] = useState(false);
+  const [viewMode, setViewMode] = useState<"calendar" | "yearly">("calendar");
 
   // 変更のたびにlocalStorageへ自動保存
   useEffect(() => {
@@ -128,11 +130,13 @@ function App() {
         onOpenSettings={() => setShowSettings(true)}
         onPrint={() => window.print()}
         onYearChange={handleYearChange}
+        viewMode={viewMode}
+        onViewChange={setViewMode}
       />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 print:p-0 print:max-w-none">
-        {/* メンバーレジェンドバー */}
-        <div className="print:hidden">
+        {/* メンバーレジェンドバー（月カレンダー時のみ） */}
+        <div className={viewMode === "yearly" ? "hidden" : "print:hidden"}>
           <MemberLegendBar
             members={members}
             dutyCounts={dutyCounts}
@@ -141,37 +145,49 @@ function App() {
           />
         </div>
 
-        {/* 印刷時タイトル */}
-        <div className="hidden print:block mb-4">
-          <h1 className="text-lg font-bold">
-            スイテック 休日当番シフト — {yearData.fiscalYear}年度
-          </h1>
-        </div>
+        {viewMode === "calendar" ? (
+          <>
+            {/* 印刷時タイトル（月カレンダー） */}
+            <div className="hidden print:block mb-4">
+              <h1 className="text-lg font-bold">
+                スイテック 休日当番シフト — {yearData.fiscalYear}年度
+              </h1>
+            </div>
 
-        {/* 2カラムレイアウト（印刷時は1カラム） */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 print:grid-cols-1 print:mt-0">
-          <Calendar
-            assignments={assignments}
-            members={members}
-            holidays={yearData.holidays}
-            holidayPeriods={yearData.holidayPeriods}
-            companyWorkDays={yearData.companyWorkDays}
-            onAssignmentToggle={handleAssignmentToggle}
-            onUnlock={handleUnlock}
-            fiscalYear={currentFiscalYear}
-          />
-          <div className="print:hidden">
-            <SummaryPanel
-              members={members}
-              dutyCounts={dutyCounts}
-              individualHolidays={individualHolidays}
-              nextRotation={nextRotation}
-              holidaySummary={holidaySummary}
-              yearData={yearData}
+            {/* 2カラムレイアウト（印刷時は1カラム） */}
+            <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 print:grid-cols-1 print:mt-0">
+              <Calendar
+                assignments={assignments}
+                members={members}
+                holidays={yearData.holidays}
+                holidayPeriods={yearData.holidayPeriods}
+                companyWorkDays={yearData.companyWorkDays}
+                onAssignmentToggle={handleAssignmentToggle}
+                onUnlock={handleUnlock}
+                fiscalYear={currentFiscalYear}
+              />
+              <div className="print:hidden">
+                <SummaryPanel
+                  members={members}
+                  dutyCounts={dutyCounts}
+                  individualHolidays={individualHolidays}
+                  nextRotation={nextRotation}
+                  holidaySummary={holidaySummary}
+                  yearData={yearData}
+                  assignments={assignments}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="mt-6">
+            <YearlyView
               assignments={assignments}
+              members={members}
+              yearData={yearData}
             />
           </div>
-        </div>
+        )}
 
       </main>
 

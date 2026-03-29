@@ -6,7 +6,7 @@ import { formatDateStr, isDutyDay, parseDateStr } from "./calendar";
  *  - 特別休暇期間内: 日曜以外の全日 (noDutyDates に含まれる日は除外)
  *  - 全社出勤日は常に除外
  */
-function getDutyDays(yearData: YearData): string[] {
+export function getDutyDays(yearData: YearData): string[] {
   const start = parseDateStr(yearData.startDate);
   const end = parseDateStr(yearData.endDate);
   const dutyDays: string[] = [];
