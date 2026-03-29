@@ -16,8 +16,6 @@ import {
 import {
   saveToStorage,
   loadFromStorage,
-  exportJSON,
-  importJSON,
 } from "./utils/storage";
 import type { Assignment, Member, YearData } from "./types";
 
@@ -116,20 +114,9 @@ function App() {
 
   function handleSaveSettings(updated: YearData) {
     setYearData(updated);
-    const locked = assignments.filter((a) => a.isLocked);
+    // marathon assignments are always regenerated from marathonDate — exclude them from locked
+    const locked = assignments.filter((a) => a.isLocked && a.type !== "marathon");
     setAssignments(generateAssignments(members, updated, locked));
-  }
-
-  function handleImport(file: File) {
-    importJSON(file)
-      .then((data) => {
-        const importedYear = data.yearData.fiscalYear;
-        setCurrentFiscalYear(importedYear);
-        setYearData(data.yearData);
-        setAssignments(data.assignments);
-        saveToStorage(data.yearData, data.assignments);
-      })
-      .catch((err) => alert(err.message));
   }
 
   return (
@@ -194,8 +181,6 @@ function App() {
           yearData={yearData}
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
-          onExport={() => exportJSON(yearData, assignments)}
-          onImport={handleImport}
         />
       )}
     </div>

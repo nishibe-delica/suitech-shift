@@ -6,8 +6,6 @@ interface SettingsModalProps {
   yearData: YearData;
   onSave: (updated: YearData) => void;
   onClose: () => void;
-  onExport: () => void;
-  onImport: (file: File) => void;
 }
 
 type TabId = "special" | "company" | "marathon";
@@ -28,8 +26,6 @@ export default function SettingsModal({
   yearData,
   onSave,
   onClose,
-  onExport,
-  onImport,
 }: SettingsModalProps) {
   const [tab, setTab] = useState<TabId>("special");
   const [draft, setDraft] = useState<YearData>({ ...yearData, holidayPeriods: yearData.holidayPeriods.map(p => ({ ...p, noDutyDates: [...p.noDutyDates] })) });
@@ -588,47 +584,19 @@ export default function SettingsModal({
         </div>
 
         {/* フッター */}
-        <div className="px-10 py-6 border-t border-gray-200 flex items-center justify-between gap-4 shrink-0">
-          <div className="flex gap-4">
-            <button
-              onClick={onExport}
-              className="inline-flex items-center gap-2.5 px-6 py-3 text-base font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-              </svg>
-              バックアップ保存
-            </button>
-            <label className="inline-flex items-center gap-2.5 px-6 py-3 text-base font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              バックアップ読込
-              <input
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) { onImport(file); onClose(); }
-                }}
-              />
-            </label>
-          </div>
-          <div className="flex gap-4">
-            <button
-              onClick={onClose}
-              className="px-8 py-3 text-base font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-            >
-              キャンセル
-            </button>
-            <button
-              onClick={() => { onSave(draft); onClose(); }}
-              className="px-8 py-3 text-base font-bold bg-brand-600 text-white rounded-xl hover:bg-brand-700 shadow-lg transition-all cursor-pointer"
-            >
-              保存して再割り振り
-            </button>
-          </div>
+        <div className="px-10 py-6 border-t border-gray-200 flex items-center justify-end gap-4 shrink-0">
+          <button
+            onClick={onClose}
+            className="px-8 py-3 text-base font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+          >
+            キャンセル
+          </button>
+          <button
+            onClick={() => { onSave(draft); onClose(); }}
+            className="px-8 py-3 text-base font-bold bg-brand-600 text-white rounded-xl hover:bg-brand-700 shadow-lg transition-all cursor-pointer"
+          >
+            保存して再割り振り
+          </button>
         </div>
       </div>
     </div>
