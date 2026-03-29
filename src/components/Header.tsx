@@ -8,8 +8,6 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onPrint: () => void;
   onYearChange: (year: number) => void;
-  viewMode: "calendar" | "yearly";
-  onViewChange: (mode: "calendar" | "yearly") => void;
 }
 
 export default function Header({
@@ -19,8 +17,6 @@ export default function Header({
   onOpenSettings,
   onPrint,
   onYearChange,
-  viewMode,
-  onViewChange,
 }: HeaderProps) {
   return (
     <header className="bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 shadow-lg print:hidden">
@@ -54,29 +50,6 @@ export default function Header({
             </div>
           </div>
 
-          {/* ビュー切替 */}
-          <div className="hidden sm:flex bg-white/15 rounded-full p-0.5 text-sm font-medium shrink-0">
-            <button
-              onClick={() => onViewChange("calendar")}
-              className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
-                viewMode === "calendar"
-                  ? "bg-white text-brand-700 shadow-sm"
-                  : "text-white hover:bg-white/10"
-              }`}
-            >
-              月カレンダー
-            </button>
-            <button
-              onClick={() => onViewChange("yearly")}
-              className={`px-4 py-1.5 rounded-full transition-all cursor-pointer ${
-                viewMode === "yearly"
-                  ? "bg-white text-brand-700 shadow-sm"
-                  : "text-white hover:bg-white/10"
-              }`}
-            >
-              年間一覧
-            </button>
-          </div>
 
           {/* ボタン群 */}
           <div className="flex items-center gap-3 shrink-0">

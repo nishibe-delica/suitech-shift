@@ -13,7 +13,6 @@ interface YearlyViewProps {
 export default function YearlyView({ assignments, members, yearData }: YearlyViewProps) {
   const activeMembers = members.filter((m) => m.active);
 
-  // 当番日・マラソン・全社出勤をまとめて収集
   const dutyDaySet = new Set(getDutyDays(yearData));
   const allDates = new Set([
     ...dutyDaySet,
@@ -29,16 +28,27 @@ export default function YearlyView({ assignments, members, yearData }: YearlyVie
 
   return (
     <div className="w-full">
-      {/* 印刷時タイトル */}
-      <div className="hidden print:block mb-4">
-        <h1 className="text-lg font-bold">
-          スイテック 休日当番シフト — {yearData.fiscalYear}年度 年間一覧
-        </h1>
+      {/* 画面見出し */}
+      <div className="print:hidden mb-6 flex items-baseline gap-3">
+        <h2 className="text-2xl font-bold text-gray-800">{yearData.fiscalYear}年度 当番一覧</h2>
+        <span className="text-sm text-gray-400">
+          {yearData.startDate.replace(/-/g, "/")} 〜 {yearData.endDate.replace(/-/g, "/")}
+        </span>
       </div>
 
-      <div className="space-y-8 print:space-y-4">
+      {/* 印刷タイトル */}
+      <div className="hidden print:block mb-6">
+        <h1 className="text-xl font-bold">
+          スイテック 休日当番シフト — {yearData.fiscalYear}年度 年間当番一覧
+        </h1>
+        <p className="text-sm text-gray-500 mt-1">
+          {yearData.startDate.replace(/-/g, "/")} 〜 {yearData.endDate.replace(/-/g, "/")}
+        </p>
+      </div>
+
+      {/* 月カードグリッド */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 print:grid-cols-3 print:gap-3">
         {months.map(({ year, month }) => {
-          // その月の対象日を抽出・昇順ソート
           const monthDates = [...allDates]
             .filter((d) => {
               const date = parseDateStr(d);
@@ -46,91 +56,102 @@ export default function YearlyView({ assignments, members, yearData }: YearlyVie
             })
             .sort();
 
-          if (monthDates.length === 0) return null;
+          if (monthDates.length === 0) {
+            return (
+              <div key={`${year}-${month}`} className="rounded-2xl border border-gray-200 overflow-hidden print:rounded-lg">
+                <div className="bg-brand-600 px-4 py-3">
+                  <span className="text-white font-bold text-base">{year}年{month + 1}月</span>
+                </div>
+                <div className="px-4 py-6 text-center text-sm text-gray-400 bg-white">
+                  当番日なし
+                </div>
+              </div>
+            );
+          }
 
           return (
-            <div key={`${year}-${month}`} className="print:break-inside-avoid">
-              <h3 className="text-base font-bold text-brand-700 border-b-2 border-brand-200 pb-1 mb-2">
-                {year}年{month + 1}月
-              </h3>
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="text-left text-xs text-gray-400 border-b border-gray-200">
-                    <th className="py-1 pr-6 font-medium w-32">日付</th>
-                    <th className="py-1 pr-4 font-medium w-32 hidden sm:table-cell">種別</th>
-                    <th className="py-1 font-medium">担当</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {monthDates.map((dateStr) => {
-                    const date = parseDateStr(dateStr);
-                    const dow = date.getDay();
-                    const holidayName = getHolidayName(date, yearData.holidays);
-                    const isMarathon = yearData.marathonDate === dateStr;
-                    const isCompanyWork = yearData.companyWorkDays.includes(dateStr);
-                    const periodLabel =
-                      yearData.holidayPeriods.find(
-                        (p) => dateStr >= p.start && dateStr <= p.end
-                      )?.label ?? null;
+            <div
+              key={`${year}-${month}`}
+              className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm print:rounded-lg print:shadow-none"
+            >
+              {/* 月ヘッダー */}
+              <div className="bg-brand-600 px-4 py-3 flex items-center justify-between">
+                <span className="text-white font-bold text-base">{year}年{month + 1}月</span>
+                <span className="text-white/60 text-sm">{monthDates.length}日</span>
+              </div>
 
-                    // 種別ラベル
-                    let typeLabel = "";
-                    if (isMarathon) typeLabel = "マラソン";
-                    else if (isCompanyWork) typeLabel = "全社出勤";
-                    else if (periodLabel) typeLabel = periodLabel;
-                    else if (holidayName) typeLabel = holidayName;
+              {/* 当番日リスト */}
+              <div className="bg-white divide-y divide-gray-100">
+                {monthDates.map((dateStr, rowIdx) => {
+                  const date = parseDateStr(dateStr);
+                  const dow = date.getDay();
+                  const holidayName = getHolidayName(date, yearData.holidays);
+                  const isMarathon = yearData.marathonDate === dateStr;
+                  const isCompanyWork = yearData.companyWorkDays.includes(dateStr);
+                  const periodLabel =
+                    yearData.holidayPeriods.find(
+                      (p) => dateStr >= p.start && dateStr <= p.end
+                    )?.label ?? null;
 
-                    // 担当メンバー
-                    const dayAssignments = assignments.filter((a) => a.date === dateStr);
-                    const assignedMembers: Member[] = isCompanyWork
-                      ? activeMembers
-                      : (dayAssignments
-                          .map((a) => members.find((m) => m.id === a.memberId))
-                          .filter(Boolean) as Member[]);
+                  let typeLabel = "";
+                  if (isMarathon) typeLabel = "マラソン";
+                  else if (isCompanyWork) typeLabel = "全社出勤";
+                  else if (periodLabel) typeLabel = periodLabel;
+                  else if (holidayName) typeLabel = holidayName;
 
-                    return (
-                      <tr key={dateStr} className="border-b border-gray-100">
-                        <td className="py-1.5 pr-6">
-                          <span className="font-medium text-gray-800">
-                            {month + 1}/{date.getDate()}
+                  const dayAssignments = assignments.filter((a) => a.date === dateStr);
+                  const assignedMembers: Member[] = isCompanyWork
+                    ? activeMembers
+                    : (dayAssignments
+                        .map((a) => members.find((m) => m.id === a.memberId))
+                        .filter(Boolean) as Member[]);
+
+                  return (
+                    <div
+                      key={dateStr}
+                      className={`flex items-center justify-between px-4 py-2.5 ${
+                        rowIdx % 2 === 1 ? "bg-gray-50/60" : "bg-white"
+                      }`}
+                    >
+                      {/* 左: 日付 */}
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-sm font-bold text-gray-800 tabular-nums w-10 shrink-0">
+                          {month + 1}/{date.getDate()}
+                        </span>
+                        <span
+                          className={`text-xs font-medium w-4 shrink-0 ${
+                            dow === 6 ? "text-blue-500" : dow === 0 ? "text-red-400" : "text-gray-400"
+                          }`}
+                        >
+                          {DOW[dow]}
+                        </span>
+                        {typeLabel && (
+                          <span className="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded truncate">
+                            {typeLabel}
                           </span>
-                          <span
-                            className={`ml-1.5 text-xs ${
-                              dow === 6
-                                ? "text-blue-500"
-                                : dow === 0
-                                  ? "text-red-400"
-                                  : "text-gray-400"
-                            }`}
-                          >
-                            ({DOW[dow]})
-                          </span>
-                        </td>
-                        <td className="py-1.5 pr-4 text-xs text-gray-500 hidden sm:table-cell">
-                          {typeLabel}
-                        </td>
-                        <td className="py-1.5">
-                          {assignedMembers.length > 0 ? (
-                            <div className="flex flex-wrap gap-1">
-                              {assignedMembers.map((m) => (
-                                <span
-                                  key={m.id}
-                                  className="inline-flex px-2 py-0.5 rounded text-xs font-semibold text-gray-700"
-                                  style={{ backgroundColor: m.color }}
-                                >
-                                  {m.name}
-                                </span>
-                              ))}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-amber-500 font-medium">未割当</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        )}
+                      </div>
+
+                      {/* 右: 担当者バッジ */}
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        {assignedMembers.length > 0 ? (
+                          assignedMembers.map((m) => (
+                            <span
+                              key={m.id}
+                              className="inline-flex px-2 py-0.5 rounded text-xs font-semibold text-gray-700"
+                              style={{ backgroundColor: m.color }}
+                            >
+                              {m.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-amber-500 font-medium">未割当</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
