@@ -166,7 +166,7 @@ export default function Calendar({
             } else if (isMarathonDay) {
               cellClasses += "bg-orange-50";
             } else if (sunday) {
-              cellClasses += Math.floor(i / 7) % 2 === 0 ? "bg-red-50" : "bg-red-100";
+              cellClasses += "bg-red-50";
             } else if (primaryMember && dutyDay) {
               cellClasses += "";
             } else if (saturday) {
