@@ -122,7 +122,7 @@ export default function Calendar({
                 i === 5
                   ? "bg-blue-50 text-blue-500"
                   : i === 6
-                    ? "bg-gray-50 text-gray-400"
+                    ? "bg-red-100 text-red-500"
                     : "bg-white text-gray-500"
               }`}
             >
@@ -166,7 +166,7 @@ export default function Calendar({
             } else if (isMarathonDay) {
               cellClasses += "bg-orange-50";
             } else if (sunday) {
-              cellClasses += "bg-gray-50";
+              cellClasses += "bg-red-100";
             } else if (primaryMember && dutyDay) {
               cellClasses += "";
             } else if (saturday) {
@@ -206,7 +206,7 @@ export default function Calendar({
                   <span
                     className={`text-base font-semibold ${
                       sunday
-                        ? "text-gray-400"
+                        ? "text-red-500"
                         : saturday
                           ? "text-blue-600"
                           : holidayName
@@ -236,6 +236,13 @@ export default function Calendar({
                 {holidayName && !sunday && (
                   <div className="text-xs text-red-400 truncate leading-tight mt-0.5">
                     {holidayName}
+                  </div>
+                )}
+
+                {/* 日曜「休み」ラベル */}
+                {sunday && (
+                  <div className="mt-1 text-xs font-bold text-red-400">
+                    休み
                   </div>
                 )}
 
