@@ -122,7 +122,7 @@ export default function Calendar({
                 i === 5
                   ? "bg-blue-50 text-blue-500"
                   : i === 6
-                    ? "bg-red-100 text-red-500"
+                    ? "bg-red-50 text-red-400"
                     : "bg-white text-gray-500"
               }`}
             >
@@ -206,7 +206,7 @@ export default function Calendar({
                   <span
                     className={`text-base font-semibold ${
                       sunday
-                        ? "text-red-500"
+                        ? "text-red-400"
                         : saturday
                           ? "text-blue-600"
                           : holidayName
