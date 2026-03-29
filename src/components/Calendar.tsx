@@ -51,19 +51,31 @@ export default function Calendar({
   onUnlock,
   fiscalYear,
 }: CalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date(fiscalYear, 3, 1));
+  // 当該年度内なら当月、範囲外なら4月にフォールバック
+  function getInitialMonth(fy: number): Date {
+    const now = new Date();
+    const fyStart = new Date(fy, 3, 1);
+    const fyEnd = new Date(fy + 1, 3, 0); // 翌年3月末
+    if (now >= fyStart && now <= fyEnd) {
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+    return fyStart;
+  }
+
+  const [currentDate, setCurrentDate] = useState(() => getInitialMonth(fiscalYear));
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dropdownAnchorRect, setDropdownAnchorRect] = useState<DOMRect | null>(null);
 
-  // 年度切替時に4月へリセット
+  // 年度切替時に当月（または4月）へリセット
   useEffect(() => {
-    setCurrentDate(new Date(fiscalYear, 3, 1));
+    setCurrentDate(getInitialMonth(fiscalYear));
     setOpenDropdown(null);
   }, [fiscalYear]);
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const days = getCalendarDays(year, month);
+  const todayStr = formatDateStr(new Date());
 
   const monthLabel = `${year}年${month + 1}月`;
 
@@ -159,6 +171,7 @@ export default function Calendar({
 
             const isInHolidayPeriod = periodLabel !== null && !isCompanyWorkDay;
             const isInteractive = isMarathonDay || (!sunday && !isCompanyWorkDay);
+            const isToday = dateStr === todayStr;
 
             let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
             if (isCompanyWorkDay) {
@@ -178,6 +191,9 @@ export default function Calendar({
             if (isInteractive) {
               cellClasses +=
                 " cursor-pointer group hover:ring-2 hover:ring-inset hover:ring-brand-200 transition-all duration-150";
+            }
+            if (isToday) {
+              cellClasses += " ring-2 ring-inset ring-brand-500";
             }
 
             return (
@@ -203,19 +219,23 @@ export default function Calendar({
               >
                 {/* 日付番号 */}
                 <div className="flex items-start justify-between">
-                  <span
-                    className={`text-base font-semibold ${
-                      sunday
-                        ? "text-red-400"
-                        : saturday
-                          ? "text-blue-600"
-                          : holidayName
-                            ? "text-red-500"
-                            : "text-gray-700"
-                    }`}
-                  >
-                    {date.getDate()}
-                  </span>
+                  <div className={isToday ? "w-7 h-7 rounded-full bg-brand-600 flex items-center justify-center -mt-0.5 -ml-0.5" : ""}>
+                    <span
+                      className={`text-base font-semibold ${
+                        isToday
+                          ? "text-white"
+                          : sunday
+                            ? "text-red-400"
+                            : saturday
+                              ? "text-blue-600"
+                              : holidayName
+                                ? "text-red-500"
+                                : "text-gray-700"
+                      }`}
+                    >
+                      {date.getDate()}
+                    </span>
+                  </div>
                   {/* ロックアイコン */}
                   {primaryAssignment?.isLocked && (
                     <svg
