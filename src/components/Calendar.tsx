@@ -157,8 +157,7 @@ export default function Calendar({
             const dutyDay = isDutyDay(date, holidays) || isHolidayPeriodDutyDay(date, holidayPeriods);
             const dateAssignments = getAssignmentsForDate(date);
 
-            // 固定メンバー (佐竹) とローテーション担当を分離
-            const fixedAssignments = dateAssignments.filter((a) => a.type === "fixed");
+            // type:"fixed" は旧データとの互換のためフィルタ除外
             const rotationAssignments = dateAssignments.filter((a) => a.type !== "fixed");
             const primaryRotationAssignment = rotationAssignments[0];
             const primaryRotationMember = primaryRotationAssignment
@@ -333,30 +332,10 @@ export default function Calendar({
                   </div>
                 )}
 
-                {/* 固定メンバー（佐竹さん）の表示 */}
-                {fixedAssignments.length > 0 && (
-                  <div className={`flex flex-col gap-0.5 ${rotationAssignments.length > 0 || isCompanyWorkDay || isMarathonDay ? "mt-0.5" : "mt-1"}`}>
-                    {fixedAssignments.map((a) => {
-                      const m = getMember(a.memberId);
-                      if (!m) return null;
-                      return (
-                        <span
-                          key={a.memberId}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium text-gray-500 border border-gray-200"
-                          style={{ backgroundColor: m.color }}
-                        >
-                          {m.name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
                 {/* 当番対象日マーカー（未割当） */}
                 {(dutyDay || isInHolidayPeriod) &&
                   !primaryRotationMember &&
-                  !isCompanyWorkDay &&
-                  fixedAssignments.length === 0 && (
+                  !isCompanyWorkDay && (
                   <div className="mt-2 text-center">
                     <span className="text-xs text-gray-400">当番</span>
                   </div>

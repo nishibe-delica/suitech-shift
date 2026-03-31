@@ -48,71 +48,19 @@ export function getDutyDays(yearData: YearData): string[] {
   return dutyDays;
 }
 
-/**
- * 固定メンバー（佐竹さんなど）の出勤日を生成する。
- * 出勤条件: 土曜・日曜・祝日・特別休暇期間内の全日
- */
-function generateFixedAssignments(
-  fixedMembers: Member[],
-  yearData: YearData
-): Assignment[] {
-  if (fixedMembers.length === 0) return [];
-
-  const result: Assignment[] = [];
-  const start = parseDateStr(yearData.startDate);
-  const end = parseDateStr(yearData.endDate);
-  const holidayDateSet = new Set(yearData.holidays.map((h) => h.date));
-
-  // 特別休暇期間の日付集合
-  const periodDateSet = new Set<string>();
-  for (const period of yearData.holidayPeriods) {
-    const ps = parseDateStr(period.start);
-    const pe = parseDateStr(period.end);
-    for (let d = new Date(ps); d <= pe; d.setDate(d.getDate() + 1)) {
-      periodDateSet.add(formatDateStr(d));
-    }
-  }
-
-  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dateStr = formatDateStr(d);
-    const dow = d.getDay();
-
-    const isSatOrSun = dow === 0 || dow === 6;
-    const isNationalHoliday = holidayDateSet.has(dateStr);
-    const inPeriod = periodDateSet.has(dateStr);
-
-    if (isSatOrSun || isNationalHoliday || inPeriod) {
-      for (const m of fixedMembers) {
-        result.push({
-          date: dateStr,
-          memberId: m.id,
-          type: "fixed",
-          isLocked: false,
-        });
-      }
-    }
-  }
-
-  return result;
-}
-
 /** 自動割り振りを生成 */
 export function generateAssignments(
   members: Member[],
   yearData: YearData,
   existingAssignments: Assignment[] = []
 ): Assignment[] {
-  // ローテーション対象 / 固定メンバーを分離
+  // ローテーション対象メンバーのみ（固定メンバーは除外）
   const rotationMembers = members.filter((m) => m.active && !m.isFixed);
-  const fixedMembers = members.filter((m) => m.active && m.isFixed);
 
   const lockedAssignments = existingAssignments.filter((a) => a.isLocked);
   const lockedDates = new Set(lockedAssignments.map((a) => a.date));
 
-  // 固定メンバーの割り振りを先に生成
-  const fixedAssignments = generateFixedAssignments(fixedMembers, yearData);
-
-  const result: Assignment[] = [...lockedAssignments, ...fixedAssignments];
+  const result: Assignment[] = [...lockedAssignments];
 
   // マラソン当番を固定（日曜でも割り振る）
   if (yearData.marathonDate && !lockedDates.has(yearData.marathonDate)) {
@@ -224,6 +172,34 @@ export function computeIndividualHolidays(
   const result: Record<string, number> = {};
   for (const [id, count] of Object.entries(dutyCounts)) {
     result[id] = calendarHolidays + additionalWeekdays - count - companyWorkDays;
+  }
+  return result;
+}
+
+/** 固定メンバー（佐竹さん）の休日一覧を返す
+ *  休日 = 土曜・日曜・祝日・特別休暇期間内の全日
+ */
+export function getFixedMemberHolidays(yearData: YearData): string[] {
+  const start = parseDateStr(yearData.startDate);
+  const end = parseDateStr(yearData.endDate);
+  const holidayDateSet = new Set(yearData.holidays.map((h) => h.date));
+
+  const periodDateSet = new Set<string>();
+  for (const period of yearData.holidayPeriods) {
+    const ps = parseDateStr(period.start);
+    const pe = parseDateStr(period.end);
+    for (let d = new Date(ps); d <= pe; d.setDate(d.getDate() + 1)) {
+      periodDateSet.add(formatDateStr(d));
+    }
+  }
+
+  const result: string[] = [];
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    const dateStr = formatDateStr(d);
+    const dow = d.getDay();
+    if (dow === 0 || dow === 6 || holidayDateSet.has(dateStr) || periodDateSet.has(dateStr)) {
+      result.push(dateStr);
+    }
   }
   return result;
 }

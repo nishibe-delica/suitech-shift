@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Member, YearData, Assignment } from "../types";
+import { getFixedMemberHolidays } from "../utils/assignment";
 
 const TARGET_DAYS = 105;
 
@@ -174,6 +175,39 @@ export default function SummaryPanel({
                 </div>
               </div>
             </div>
+
+            {/* 佐竹さんの休日一覧 */}
+            {(() => {
+              const fixedMembers = members.filter((m) => m.active && m.isFixed);
+              if (fixedMembers.length === 0) return null;
+              const holidays = getFixedMemberHolidays(yearData);
+              // 月ごとにグループ化
+              const byMonth: Record<string, string[]> = {};
+              for (const dateStr of holidays) {
+                const [, m, d] = dateStr.split("-");
+                const key = m; // "04", "05", ...
+                if (!byMonth[key]) byMonth[key] = [];
+                byMonth[key].push(`${parseInt(m)}/${parseInt(d)}`);
+              }
+              return (
+                <div className="px-5 py-4">
+                  <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    佐竹さんの休日
+                  </h4>
+                  <div className="space-y-2">
+                    {Object.entries(byMonth).map(([monthKey, dates]) => (
+                      <div key={monthKey} className="text-xs text-gray-600 leading-relaxed">
+                        <span className="font-semibold text-gray-500 mr-1">
+                          {parseInt(monthKey)}月:
+                        </span>
+                        {dates.join("・")}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-2">計 {holidays.length}日</p>
+                </div>
+              );
+            })()}
 
             {/* マラソン当番 */}
             {yearData.marathonDate && (
