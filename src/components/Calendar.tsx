@@ -21,17 +21,16 @@ interface CalendarProps {
   onAssignmentToggle: (date: string, memberId: string) => void;
   onUnlock: (date: string) => void;
   fiscalYear: number;
+  isAdmin: boolean;
 }
 
-/** 特別休暇期間内かどうかを判定（noDutyDates・全社出勤日を考慮） */
+/** 特別休暇期間内かどうかを判定 */
 function isHolidayPeriodDutyDay(
   date: Date,
-  holidayPeriods: HolidayPeriod[],
-  companyWorkDays: string[]
+  holidayPeriods: HolidayPeriod[]
 ): boolean {
   if (date.getDay() === 0) return false; // 日曜は対象外
   const dateStr = formatDateStr(date);
-  if (companyWorkDays.includes(dateStr)) return false;
   for (const period of holidayPeriods) {
     if (dateStr >= period.start && dateStr <= period.end) {
       if (period.noDutyDates.includes(dateStr)) return false;
@@ -50,6 +49,7 @@ export default function Calendar({
   onAssignmentToggle,
   onUnlock,
   fiscalYear,
+  isAdmin,
 }: CalendarProps) {
   // 当該年度内なら当月、範囲外なら4月にフォールバック
   function getInitialMonth(fy: number): Date {
@@ -154,15 +154,18 @@ export default function Calendar({
             const sunday = isSunday(date);
             const saturday = isSaturday(date);
             const holidayName = getHolidayName(date, holidays);
-            const dutyDay = isDutyDay(date, holidays) || isHolidayPeriodDutyDay(date, holidayPeriods, companyWorkDays);
+            const dutyDay = isDutyDay(date, holidays) || isHolidayPeriodDutyDay(date, holidayPeriods);
             const dateAssignments = getAssignmentsForDate(date);
-            const primaryAssignment = dateAssignments[0];
-            const primaryMember = primaryAssignment
-              ? getMember(primaryAssignment.memberId)
+
+            // 固定メンバー (佐竹) とローテーション担当を分離
+            const fixedAssignments = dateAssignments.filter((a) => a.type === "fixed");
+            const rotationAssignments = dateAssignments.filter((a) => a.type !== "fixed");
+            const primaryRotationAssignment = rotationAssignments[0];
+            const primaryRotationMember = primaryRotationAssignment
+              ? getMember(primaryRotationAssignment.memberId)
               : undefined;
-            const isMarathonDay = dateAssignments.some(
-              (a) => a.type === "marathon"
-            );
+
+            const isMarathonDay = rotationAssignments.some((a) => a.type === "marathon");
             const isCompanyWorkDay = companyWorkDays.includes(dateStr);
             const periodLabel = holidayPeriods.find(
               (p) => dateStr >= p.start && dateStr <= p.end
@@ -170,7 +173,8 @@ export default function Calendar({
             const isDropdownOpen = openDropdown === dateStr;
 
             const isInHolidayPeriod = periodLabel !== null && !isCompanyWorkDay;
-            const isInteractive = isMarathonDay || (!sunday && !isCompanyWorkDay);
+            // 管理者のみインタラクティブ（日曜は例外: マラソン日のみ可）
+            const isInteractive = isAdmin && (isMarathonDay || !sunday);
             const isToday = dateStr === todayStr;
 
             let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
@@ -180,7 +184,7 @@ export default function Calendar({
               cellClasses += "bg-orange-50";
             } else if (sunday) {
               cellClasses += "bg-white";
-            } else if (primaryMember && dutyDay) {
+            } else if (primaryRotationMember && dutyDay) {
               cellClasses += "";
             } else if (saturday) {
               cellClasses += "bg-blue-50/30";
@@ -201,8 +205,12 @@ export default function Calendar({
                 key={dateStr}
                 className={cellClasses}
                 style={
-                  primaryMember && !sunday && !isMarathonDay && !isCompanyWorkDay && dateAssignments.length === 1
-                    ? { backgroundColor: primaryMember.color }
+                  primaryRotationMember &&
+                  !sunday &&
+                  !isMarathonDay &&
+                  !isCompanyWorkDay &&
+                  rotationAssignments.length === 1
+                    ? { backgroundColor: primaryRotationMember.color }
                     : undefined
                 }
                 onClick={(e) => {
@@ -237,7 +245,7 @@ export default function Calendar({
                     </span>
                   </div>
                   {/* ロックアイコン */}
-                  {primaryAssignment?.isLocked && (
+                  {primaryRotationAssignment?.isLocked && (
                     <svg
                       className="w-3 h-3 text-gray-400"
                       fill="currentColor"
@@ -259,7 +267,6 @@ export default function Calendar({
                   </div>
                 )}
 
-
                 {/* 特別休暇期間ラベル */}
                 {periodLabel && !isCompanyWorkDay && (
                   <div className="text-xs text-purple-500 font-bold truncate leading-tight mt-0.5">
@@ -271,7 +278,7 @@ export default function Calendar({
                 {isMarathonDay && (
                   <div className="mt-1 flex flex-col gap-0.5">
                     <span className="text-xs text-orange-600 font-bold">揖斐川マラソン</span>
-                    {dateAssignments.map((a) => {
+                    {rotationAssignments.map((a) => {
                       const m = getMember(a.memberId);
                       if (!m) return null;
                       return (
@@ -287,26 +294,30 @@ export default function Calendar({
                   </div>
                 )}
 
-                {/* 全社出勤日（全員表示） */}
+                {/* 全社出勤日: 実際の割り振りを表示 */}
                 {isCompanyWorkDay && (
                   <div className="mt-1 flex flex-col gap-0.5">
                     <span className="text-xs text-amber-600 font-bold">全社出勤</span>
-                    {members.filter((m) => m.active).map((m) => (
-                      <span
-                        key={m.id}
-                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold text-gray-700 animate-fade-in"
-                        style={{ backgroundColor: m.color }}
-                      >
-                        {m.name}
-                      </span>
-                    ))}
+                    {rotationAssignments.map((a) => {
+                      const m = getMember(a.memberId);
+                      if (!m) return null;
+                      return (
+                        <span
+                          key={a.memberId}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold text-gray-700 animate-fade-in"
+                          style={{ backgroundColor: m.color }}
+                        >
+                          {m.name}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* 通常当番（複数人対応） */}
-                {!isMarathonDay && !isCompanyWorkDay && dateAssignments.length > 0 && (
+                {/* 通常当番（ローテーション担当） */}
+                {!isMarathonDay && !isCompanyWorkDay && rotationAssignments.length > 0 && (
                   <div className="mt-1 flex flex-col gap-0.5 animate-fade-in">
-                    {dateAssignments.map((a) => {
+                    {rotationAssignments.map((a) => {
                       const m = getMember(a.memberId);
                       if (!m) return null;
                       return (
@@ -322,8 +333,30 @@ export default function Calendar({
                   </div>
                 )}
 
+                {/* 固定メンバー（佐竹さん）の表示 */}
+                {fixedAssignments.length > 0 && (
+                  <div className={`flex flex-col gap-0.5 ${rotationAssignments.length > 0 || isCompanyWorkDay || isMarathonDay ? "mt-0.5" : "mt-1"}`}>
+                    {fixedAssignments.map((a) => {
+                      const m = getMember(a.memberId);
+                      if (!m) return null;
+                      return (
+                        <span
+                          key={a.memberId}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium text-gray-500 border border-gray-200"
+                          style={{ backgroundColor: m.color }}
+                        >
+                          {m.name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {/* 当番対象日マーカー（未割当） */}
-                {(dutyDay || isInHolidayPeriod) && !primaryMember && !isCompanyWorkDay && (
+                {(dutyDay || isInHolidayPeriod) &&
+                  !primaryRotationMember &&
+                  !isCompanyWorkDay &&
+                  fixedAssignments.length === 0 && (
                   <div className="mt-2 text-center">
                     <span className="text-xs text-gray-400">当番</span>
                   </div>
@@ -334,8 +367,8 @@ export default function Calendar({
                   <MemberDropdown
                     anchorRect={dropdownAnchorRect}
                     members={members}
-                    selectedMemberIds={dateAssignments.filter((a) => a.type !== "marathon").map((a) => a.memberId)}
-                    hasLocked={dateAssignments.some((a) => a.isLocked)}
+                    selectedMemberIds={rotationAssignments.map((a) => a.memberId)}
+                    hasLocked={rotationAssignments.some((a) => a.isLocked)}
                     onToggle={(memberId) => {
                       onAssignmentToggle(dateStr, memberId);
                     }}

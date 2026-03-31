@@ -30,7 +30,8 @@ export default function SummaryPanel({
   assignments,
 }: SummaryPanelProps) {
   const [detailOpen, setDetailOpen] = useState(false);
-  const activeMembers = members.filter((m) => m.active);
+  // 固定メンバー（佐竹さん）はローテーション集計・休日計算から除外
+  const activeMembers = members.filter((m) => m.active && !m.isFixed);
   const additionalWeekdays = holidaySummary.additionalWeekdays;
   const companyWorkDays = yearData.companyWorkDays.length;
 

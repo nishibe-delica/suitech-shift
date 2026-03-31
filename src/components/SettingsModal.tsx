@@ -8,13 +8,9 @@ interface SettingsModalProps {
   onClose: () => void;
   onExport: () => void;
   onImport: (file: File) => void;
-  gasUrl: string;
-  onGasUrlChange: (url: string) => void;
-  onCloudPush: () => Promise<void>;
-  onCloudPull: () => Promise<void>;
 }
 
-type TabId = "special" | "company" | "marathon" | "sync";
+type TabId = "special" | "company" | "marathon";
 
 const DOW_LABELS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -34,13 +30,8 @@ export default function SettingsModal({
   onClose,
   onExport,
   onImport,
-  gasUrl,
-  onGasUrlChange,
-  onCloudPush,
-  onCloudPull,
 }: SettingsModalProps) {
   const [tab, setTab] = useState<TabId>("special");
-  const [cloudBusy, setCloudBusy] = useState<"push" | "pull" | null>(null);
   const [draft, setDraft] = useState<YearData>({ ...yearData, holidayPeriods: yearData.holidayPeriods.map(p => ({ ...p, noDutyDates: [...p.noDutyDates] })) });
 
   // 特別休暇追加フォーム
@@ -170,7 +161,6 @@ export default function SettingsModal({
     { id: "special", label: "特別休暇" },
     { id: "company", label: "全社出勤日" },
     { id: "marathon", label: "マラソン" },
-    { id: "sync", label: "データ同期" },
   ];
 
   const holidayDateSet = new Set(draft.holidays.map((h) => h.date));
@@ -220,11 +210,6 @@ export default function SettingsModal({
               {t.id === "marathon" && (
                 <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.59 14.37a6 6 0 01-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 006.16-12.12A14.98 14.98 0 009.631 8.41m5.96 5.96a14.926 14.926 0 01-5.841 2.58m-.119-8.54a6 6 0 00-7.381 5.84h4.8m2.58-5.84a14.927 14.927 0 00-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 01-2.448-2.448 14.9 14.9 0 01.06-.312m-2.24 2.39a4.493 4.493 0 00-1.757 4.306 4.493 4.493 0 004.306-1.758M16.5 9a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                </svg>
-              )}
-              {t.id === "sync" && (
-                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 5.75 5.75 0 011.025 11.096" />
                 </svg>
               )}
               {t.label}
@@ -601,139 +586,47 @@ export default function SettingsModal({
             </div>
           )}
 
-          {/* ━━━ データ同期タブ ━━━ */}
-          {tab === "sync" && (
-            <div className="space-y-8">
-
-              {/* JSON バックアップ */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">JSONバックアップ</h3>
-                <p className="text-base text-gray-500 mb-4">
-                  現在の年度データをファイルに書き出し / 読み込みます。メンバーへの共有にも使えます。
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={onExport}
-                    className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    JSONを書き出す
-                  </button>
-                  <label className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                    JSONを読み込む
-                    <input type="file" accept=".json" className="hidden" onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) { onImport(file); onClose(); }
-                    }} />
-                  </label>
-                </div>
-              </div>
-
-              <hr className="border-gray-200" />
-
-              {/* Google スプレッドシート同期 */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">Googleスプレッドシート同期</h3>
-                <p className="text-base text-gray-500 mb-4">
-                  全年度のデータをクラウドへ保存・読込できます。メンバー全員が同じURLを使います。
-                </p>
-
-                {/* セットアップ手順 */}
-                <details className="mb-5 bg-gray-50 rounded-2xl overflow-hidden">
-                  <summary className="px-5 py-4 text-base font-semibold text-gray-700 cursor-pointer select-none">
-                    初回セットアップ手順（クリックで展開）
-                  </summary>
-                  <div className="px-5 pb-5 text-sm text-gray-600 space-y-2">
-                    <p>① Googleスプレッドシートを新規作成する</p>
-                    <p>② メニュー「拡張機能」→「Apps Script」を開く</p>
-                    <p>③ 以下のコードを貼り付けて保存（Ctrl+S）</p>
-                    <pre className="bg-gray-900 text-green-300 rounded-xl p-4 text-xs overflow-x-auto my-2 select-all">{`function doGet() {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  return ContentService
-    .createTextOutput(sheet.getRange('A1').getValue() || '{}')
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  sheet.getRange('A1').setValue(e.postData.contents);
-  return ContentService
-    .createTextOutput('{"ok":true}')
-    .setMimeType(ContentService.MimeType.JSON);
-}`}</pre>
-                    <p>④「デプロイ」→「新しいデプロイ」→ 種類:「ウェブアプリ」</p>
-                    <p>⑤ アクセス:「全員」に設定して「デプロイ」</p>
-                    <p>⑥ 表示されたURLを下に貼り付ける</p>
-                  </div>
-                </details>
-
-                {/* URL入力 */}
-                <div className="mb-4">
-                  <label className="text-base text-gray-500 mb-2 block">Apps Script Web App URL</label>
-                  <input
-                    type="url"
-                    value={gasUrl}
-                    onChange={(e) => onGasUrlChange(e.target.value)}
-                    placeholder="https://script.google.com/macros/s/..."
-                    className="w-full text-sm border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-300 font-mono"
-                  />
-                </div>
-
-                {/* 同期ボタン */}
-                <div className="flex gap-3">
-                  <button
-                    disabled={!gasUrl || cloudBusy !== null}
-                    onClick={async () => {
-                      setCloudBusy("push");
-                      await onCloudPush();
-                      setCloudBusy(null);
-                    }}
-                    className="inline-flex items-center gap-2 px-6 py-3 text-base font-bold bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 5.75 5.75 0 011.025 11.096" />
-                    </svg>
-                    {cloudBusy === "push" ? "保存中..." : "クラウドへ保存"}
-                  </button>
-                  <button
-                    disabled={!gasUrl || cloudBusy !== null}
-                    onClick={async () => {
-                      setCloudBusy("pull");
-                      await onCloudPull();
-                      setCloudBusy(null);
-                    }}
-                    className="inline-flex items-center gap-2 px-6 py-3 text-base font-bold bg-white text-brand-700 border-2 border-brand-300 rounded-xl hover:bg-brand-50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9.75v6.75m0 0l-3-3m3 3l3-3m-8.25 6a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.338-2.32 5.75 5.75 0 011.025 11.096" />
-                    </svg>
-                    {cloudBusy === "pull" ? "読込中..." : "クラウドから読込"}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* フッター */}
-        <div className="px-10 py-6 border-t border-gray-200 flex items-center justify-end gap-4 shrink-0">
-          <button
-            onClick={onClose}
-            className="px-8 py-3 text-base font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={() => { onSave(draft); onClose(); }}
-            className="px-8 py-3 text-base font-bold bg-brand-600 text-white rounded-xl hover:bg-brand-700 shadow-lg transition-all cursor-pointer"
-          >
-            保存して再割り振り
-          </button>
+        <div className="px-10 py-6 border-t border-gray-200 flex items-center justify-between gap-4 shrink-0">
+          {/* JSON バックアップ */}
+          <div className="flex gap-2">
+            <button
+              onClick={onExport}
+              title="JSONを書き出す"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+              書き出す
+            </button>
+            <label className="inline-flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors cursor-pointer">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+              </svg>
+              読み込む
+              <input type="file" accept=".json" className="hidden" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) { onImport(file); onClose(); }
+              }} />
+            </label>
+          </div>
+          <div className="flex gap-4">
+            <button
+              onClick={onClose}
+              className="px-8 py-3 text-base font-medium text-gray-600 hover:bg-gray-100 rounded-xl transition-colors cursor-pointer"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={() => { onSave(draft); onClose(); }}
+              className="px-8 py-3 text-base font-bold bg-brand-600 text-white rounded-xl hover:bg-brand-700 shadow-lg transition-all cursor-pointer"
+            >
+              保存して再割り振り
+            </button>
+          </div>
         </div>
       </div>
     </div>

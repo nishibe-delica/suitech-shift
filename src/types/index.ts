@@ -5,6 +5,8 @@ export interface Member {
   order: number;
   active: boolean;
   isMarathonMember: boolean;
+  /** true の場合、ローテーション対象外の固定メンバー（例: 佐竹） */
+  isFixed?: boolean;
 }
 
 export interface HolidayPeriod {
@@ -30,6 +32,7 @@ export interface YearData {
 export interface Assignment {
   date: string;
   memberId: string;
-  type: "rotation" | "marathon" | "manual";
+  /** fixed = 佐竹さんなど固定メンバーの自動割り振り */
+  type: "rotation" | "marathon" | "manual" | "fixed";
   isLocked: boolean;
 }

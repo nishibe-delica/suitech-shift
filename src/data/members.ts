@@ -33,6 +33,15 @@ export const defaultMembers: Member[] = [
     active: true,
     isMarathonMember: true,
   },
+  {
+    id: "satake",
+    name: "佐竹",
+    color: "#FFF0D6",
+    order: 5,
+    active: true,
+    isMarathonMember: false,
+    isFixed: true, // ローテーション対象外・固定出勤
+  },
 ];
 
 export const defaultRotationOrder = ["taniwaki", "miki", "nishibe", "yamada"];

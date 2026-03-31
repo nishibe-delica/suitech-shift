@@ -20,7 +20,8 @@ export default function MemberDropdown({
   onUnlock,
   onClose,
 }: MemberDropdownProps) {
-  const activeMembers = members.filter((m) => m.active);
+  // 固定メンバー（佐竹さんなど）はドロップダウンから除外
+  const activeMembers = members.filter((m) => m.active && !m.isFixed);
   const selectedSet = new Set(selectedMemberIds);
 
   // 画面右端に収まるよう left を調整

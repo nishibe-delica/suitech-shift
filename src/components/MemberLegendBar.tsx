@@ -21,7 +21,8 @@ export default function MemberLegendBar({
   individualHolidays,
   hasAssignments,
 }: MemberLegendBarProps) {
-  const activeMembers = members.filter((m) => m.active);
+  // 固定メンバー（佐竹さん）は年間休日計算の対象外
+  const activeMembers = members.filter((m) => m.active && !m.isFixed);
   const allOk = hasAssignments && activeMembers.every(
     (m) => individualHolidays[m.id] === TARGET_DAYS
   );
