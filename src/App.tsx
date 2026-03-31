@@ -5,6 +5,7 @@ import Calendar from "./components/Calendar";
 import SummaryPanel from "./components/SummaryPanel";
 import SettingsModal from "./components/SettingsModal";
 import YearlyView from "./components/YearlyView";
+import AdminLoginModal from "./components/AdminLoginModal";
 import { defaultMembers } from "./data/members";
 import { getDefaultYearData } from "./data/yearDefaults";
 import {
@@ -19,16 +20,19 @@ import {
   loadFromStorage,
   exportJSON,
   importJSON,
-  cloudPushAll,
-  cloudPullAll,
-  saveGasUrl,
-  loadGasUrl,
 } from "./utils/storage";
+import {
+  supabase,
+  loadFromSupabase,
+  saveToSupabase,
+  adminSignIn,
+  adminSignOut,
+} from "./utils/supabase";
 import type { Assignment, Member, YearData } from "./types";
 
 const INITIAL_FISCAL_YEAR = 2026;
 
-function loadYear(fiscalYear: number): { yearData: YearData; assignments: Assignment[] } {
+function loadYearLocal(fiscalYear: number): { yearData: YearData; assignments: Assignment[] } {
   const saved = loadFromStorage(fiscalYear);
   return {
     yearData: saved?.yearData ?? getDefaultYearData(fiscalYear),
@@ -40,18 +44,55 @@ function App() {
   const [members] = useState<Member[]>(defaultMembers);
   const [currentFiscalYear, setCurrentFiscalYear] = useState(INITIAL_FISCAL_YEAR);
   const [yearData, setYearData] = useState<YearData>(
-    () => loadYear(INITIAL_FISCAL_YEAR).yearData
+    () => loadYearLocal(INITIAL_FISCAL_YEAR).yearData
   );
   const [assignments, setAssignments] = useState<Assignment[]>(
-    () => loadYear(INITIAL_FISCAL_YEAR).assignments
+    () => loadYearLocal(INITIAL_FISCAL_YEAR).assignments
   );
   const [showSettings, setShowSettings] = useState(false);
   const [viewMode, setViewMode] = useState<"calendar" | "yearly">("calendar");
-  const [gasUrl, setGasUrl] = useState(() => loadGasUrl());
 
-  // 変更のたびにlocalStorageへ自動保存
+  // 管理者認証
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [cloudStatus, setCloudStatus] = useState<"idle" | "loading" | "saved">("idle");
+
+  // 起動時: Supabaseからデータ読込 + セッション確認
+  useEffect(() => {
+    // セッション確認
+    supabase.auth.getSession().then(({ data }) => {
+      setIsAdmin(!!data.session);
+    });
+
+    // 認証状態の変更を監視
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAdmin(!!session);
+    });
+
+    // Supabaseからデータ読込（全員）
+    loadFromSupabase(INITIAL_FISCAL_YEAR).then((data) => {
+      if (data) {
+        const yd = data.yearData as YearData;
+        const as = data.assignments as Assignment[];
+        setYearData(yd);
+        setAssignments(as);
+        saveToStorage(yd, as); // ローカルにもキャッシュ
+      }
+    });
+
+    return () => { listener?.subscription.unsubscribe(); };
+  }, []);
+
+  // 管理者のデータ変更時 → Supabase + localStorage に自動保存
   useEffect(() => {
     saveToStorage(yearData, assignments);
+    if (isAdmin) {
+      setCloudStatus("loading");
+      saveToSupabase(currentFiscalYear, yearData, assignments).then((ok) => {
+        setCloudStatus(ok ? "saved" : "idle");
+        setTimeout(() => setCloudStatus("idle"), 2000);
+      });
+    }
   }, [yearData, assignments]);
 
   const dutyCounts = useMemo(
@@ -74,37 +115,39 @@ function App() {
     [yearData, dutyCounts, holidaySummary.calendarHolidays, holidaySummary.additionalWeekdays]
   );
 
-  /** 年度切替 — 現在年度を保存してから新年度を読み込む */
-  function handleYearChange(newYear: number) {
+  async function handleYearChange(newYear: number) {
     if (newYear === currentFiscalYear) return;
-    // 現在年度を保存（useEffectでも保存されるが念のため即時保存）
     saveToStorage(yearData, assignments);
-    // 新年度のデータを読み込む
-    const loaded = loadYear(newYear);
+    // Supabaseから新年度データ取得
+    const cloudData = await loadFromSupabase(newYear);
+    let loaded: { yearData: YearData; assignments: Assignment[] };
+    if (cloudData) {
+      loaded = { yearData: cloudData.yearData as YearData, assignments: cloudData.assignments as Assignment[] };
+      saveToStorage(loaded.yearData, loaded.assignments);
+    } else {
+      loaded = loadYearLocal(newYear);
+    }
     setCurrentFiscalYear(newYear);
     setYearData(loaded.yearData);
     setAssignments(loaded.assignments);
   }
 
   function handleAutoAssign() {
+    if (!isAdmin) return;
     const locked = assignments.filter((a) => a.isLocked);
     setAssignments(generateAssignments(members, yearData, locked));
   }
 
   function handleAssignmentToggle(date: string, memberId: string) {
+    if (!isAdmin) return;
     const isAlreadyAssigned = assignments.some(
       (a) => a.date === date && a.memberId === memberId && a.type !== "marathon"
     );
-
     if (isAlreadyAssigned) {
-      // 選択解除: そのメンバーのみ削除（他の日は変更しない）
-      setAssignments(
-        assignments.filter(
-          (a) => !(a.date === date && a.memberId === memberId && a.type !== "marathon")
-        )
-      );
+      setAssignments(assignments.filter(
+        (a) => !(a.date === date && a.memberId === memberId && a.type !== "marathon")
+      ));
     } else {
-      // 選択追加: 同じ日の既存アサインをロック済みにした上で追加（自動再割り振り時も保持）
       const withLockedExisting = assignments.map((a) =>
         a.date === date && a.type !== "marathon" ? { ...a, isLocked: true } : a
       );
@@ -116,19 +159,21 @@ function App() {
   }
 
   function handleUnlock(date: string) {
+    if (!isAdmin) return;
     const remaining = assignments.filter((a) => a.date !== date);
     const locked = remaining.filter((a) => a.isLocked);
     setAssignments(generateAssignments(members, yearData, locked));
   }
 
   function handleSaveSettings(updated: YearData) {
+    if (!isAdmin) return;
     setYearData(updated);
-    // marathon assignments are always regenerated from marathonDate — exclude them from locked
     const locked = assignments.filter((a) => a.isLocked && a.type !== "marathon");
     setAssignments(generateAssignments(members, updated, locked));
   }
 
   function handleImport(file: File) {
+    if (!isAdmin) return;
     importJSON(file)
       .then((data) => {
         const importedYear = data.yearData.fiscalYear;
@@ -140,31 +185,15 @@ function App() {
       .catch((err) => alert(err.message));
   }
 
-  function handleGasUrlChange(url: string) {
-    setGasUrl(url);
-    saveGasUrl(url);
+  async function handleLogin(email: string, password: string): Promise<string | null> {
+    const err = await adminSignIn(email, password);
+    if (!err) setShowLoginModal(false);
+    return err;
   }
 
-  async function handleCloudPush() {
-    try {
-      saveToStorage(yearData, assignments);
-      await cloudPushAll(gasUrl);
-      alert("クラウドへ保存しました");
-    } catch (err) {
-      alert(`保存に失敗しました: ${err instanceof Error ? err.message : err}`);
-    }
-  }
-
-  async function handleCloudPull() {
-    try {
-      await cloudPullAll(gasUrl);
-      const loaded = loadYear(currentFiscalYear);
-      setYearData(loaded.yearData);
-      setAssignments(loaded.assignments);
-      alert("クラウドから読み込みました");
-    } catch (err) {
-      alert(`読込に失敗しました: ${err instanceof Error ? err.message : err}`);
-    }
+  async function handleLogout() {
+    await adminSignOut();
+    setIsAdmin(false);
   }
 
   return (
@@ -176,6 +205,10 @@ function App() {
         onOpenSettings={() => setShowSettings(true)}
         onPrint={() => window.print()}
         onYearChange={handleYearChange}
+        isAdmin={isAdmin}
+        onLoginClick={() => setShowLoginModal(true)}
+        onLogout={handleLogout}
+        cloudStatus={cloudStatus}
       />
 
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 py-8 print:p-0 print:max-w-none">
@@ -209,7 +242,7 @@ function App() {
           </button>
         </div>
 
-        {/* メンバーレジェンドバー（月カレンダー時のみ） */}
+        {/* メンバーレジェンドバー */}
         <div className={viewMode === "yearly" ? "hidden" : "print:hidden"}>
           <MemberLegendBar
             members={members}
@@ -221,14 +254,11 @@ function App() {
 
         {viewMode === "calendar" ? (
           <>
-            {/* 印刷時タイトル（月カレンダー） */}
             <div className="hidden print:block mb-4">
               <h1 className="text-lg font-bold">
                 スイテック 休日当番シフト — {yearData.fiscalYear}年度
               </h1>
             </div>
-
-            {/* 2カラムレイアウト（印刷時は1カラム） */}
             <div className="mt-6 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 print:grid-cols-1 print:mt-0">
               <Calendar
                 assignments={assignments}
@@ -239,6 +269,7 @@ function App() {
                 onAssignmentToggle={handleAssignmentToggle}
                 onUnlock={handleUnlock}
                 fiscalYear={currentFiscalYear}
+                isAdmin={isAdmin}
               />
               <div className="print:hidden">
                 <SummaryPanel
@@ -254,29 +285,28 @@ function App() {
             </div>
           </>
         ) : (
-          <div>
-            <YearlyView
-              assignments={assignments}
-              members={members}
-              yearData={yearData}
-            />
-          </div>
+          <YearlyView
+            assignments={assignments}
+            members={members}
+            yearData={yearData}
+          />
         )}
-
       </main>
 
-      {/* 設定モーダル */}
-      {showSettings && (
+      {showSettings && isAdmin && (
         <SettingsModal
           yearData={yearData}
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
           onExport={() => exportJSON(yearData, assignments)}
           onImport={handleImport}
-          gasUrl={gasUrl}
-          onGasUrlChange={handleGasUrlChange}
-          onCloudPush={handleCloudPush}
-          onCloudPull={handleCloudPull}
+        />
+      )}
+
+      {showLoginModal && (
+        <AdminLoginModal
+          onLogin={handleLogin}
+          onClose={() => setShowLoginModal(false)}
         />
       )}
     </div>

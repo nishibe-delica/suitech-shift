@@ -8,6 +8,10 @@ interface HeaderProps {
   onOpenSettings: () => void;
   onPrint: () => void;
   onYearChange: (year: number) => void;
+  isAdmin: boolean;
+  onLoginClick: () => void;
+  onLogout: () => void;
+  cloudStatus: "idle" | "loading" | "saved";
 }
 
 export default function Header({
@@ -17,6 +21,10 @@ export default function Header({
   onOpenSettings,
   onPrint,
   onYearChange,
+  isAdmin,
+  onLoginClick,
+  onLogout,
+  cloudStatus,
 }: HeaderProps) {
   return (
     <header className="bg-gradient-to-r from-brand-700 via-brand-600 to-brand-500 shadow-lg print:hidden">
@@ -53,6 +61,42 @@ export default function Header({
 
           {/* ボタン群 */}
           <div className="flex items-center gap-3 shrink-0">
+            {/* クラウド保存ステータス（管理者のみ） */}
+            {isAdmin && cloudStatus !== "idle" && (
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full transition-all ${
+                cloudStatus === "loading"
+                  ? "bg-white/20 text-white/80"
+                  : "bg-green-400/30 text-green-100"
+              }`}>
+                {cloudStatus === "loading" ? "保存中..." : "✓ 保存済み"}
+              </span>
+            )}
+
+            {/* 管理者ログイン/ログアウト */}
+            {isAdmin ? (
+              <button
+                onClick={onLogout}
+                title="管理者ログアウト"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-green-400/25 text-green-100 font-medium text-xs rounded-full hover:bg-green-400/40 transition-all cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                </svg>
+                管理者
+              </button>
+            ) : (
+              <button
+                onClick={onLoginClick}
+                title="管理者ログイン"
+                className="inline-flex items-center gap-1.5 px-3 py-2 bg-white/10 text-white/60 font-medium text-xs rounded-full hover:bg-white/20 hover:text-white transition-all cursor-pointer"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                </svg>
+                閲覧中
+              </button>
+            )}
+
             {/* 印刷ボタン */}
             <button
               onClick={onPrint}
@@ -64,8 +108,8 @@ export default function Header({
               </svg>
             </button>
 
-            {/* 設定ボタン */}
-            <button
+            {/* 設定ボタン（管理者のみ） */}
+            {isAdmin && <button
               onClick={onOpenSettings}
               title="設定"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/15 text-white font-medium text-sm rounded-full hover:bg-white/25 active:scale-95 transition-all duration-150 cursor-pointer"
@@ -75,10 +119,10 @@ export default function Header({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <span className="hidden sm:inline">設定</span>
-            </button>
+            </button>}
 
-            {/* 自動割り振りボタン */}
-            <button
+            {/* 自動割り振りボタン（管理者のみ） */}
+            {isAdmin && <button
               onClick={onAutoAssign}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-brand-700 font-bold text-sm rounded-full shadow-md hover:shadow-lg hover:bg-brand-50 active:scale-95 transition-all duration-150 cursor-pointer"
             >
@@ -88,7 +132,7 @@ export default function Header({
               <span className="hidden sm:inline">
                 {hasAssignments ? "再割り振り" : "自動割り振り"}
               </span>
-            </button>
+            </button>}
           </div>
         </div>
       </div>
