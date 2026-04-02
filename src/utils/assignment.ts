@@ -48,6 +48,30 @@ export function getDutyDays(yearData: YearData): string[] {
   return dutyDays;
 }
 
+/**
+ * 不正な割り振りデータを除去する
+ * - 祝日修正などで「当番対象日でなくなった日」の自動割り振りを削除
+ * - ロック済み・マラソン・全社出勤日は保持
+ */
+export function sanitizeAssignments(
+  assignments: Assignment[],
+  yearData: YearData
+): Assignment[] {
+  const validDutyDays = new Set([
+    ...getDutyDays(yearData),
+    ...yearData.companyWorkDays,
+  ]);
+
+  return assignments.filter((a) => {
+    // マラソン当番は常に保持
+    if (a.type === "marathon") return true;
+    // ロック済みは保持（ユーザーが意図的に設定）
+    if (a.isLocked) return true;
+    // 当番対象日・全社出勤日・マラソン日のみ保持
+    return validDutyDays.has(a.date) || a.date === yearData.marathonDate;
+  });
+}
+
 /** 自動割り振りを生成 */
 export function generateAssignments(
   members: Member[],

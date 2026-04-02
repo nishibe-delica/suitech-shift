@@ -10,6 +10,7 @@ import { defaultMembers } from "./data/members";
 import { getDefaultYearData } from "./data/yearDefaults";
 import {
   generateAssignments,
+  sanitizeAssignments,
   countByMember,
   getNextRotationMember,
   computeHolidaySummary,
@@ -70,16 +71,18 @@ function App() {
     });
 
     // Supabaseからデータ読込（全員）
-    // 祝日データは常にコード側の最新値を使用（DB保存値は上書き）
+    // 祝日データは常にコード側の最新値で上書き
+    // 不正な割り振り（祝日修正で当番日でなくなった日）は自動除去
     loadFromSupabase(INITIAL_FISCAL_YEAR).then((data) => {
       if (data) {
         const yd = data.yearData as YearData;
         const as = data.assignments as Assignment[];
         const canonical = getDefaultYearData(INITIAL_FISCAL_YEAR);
         const merged: YearData = { ...yd, holidays: canonical.holidays };
+        const sanitized = sanitizeAssignments(as, merged);
         setYearData(merged);
-        setAssignments(as);
-        saveToStorage(merged, as);
+        setAssignments(sanitized);
+        saveToStorage(merged, sanitized);
       }
     });
 
@@ -127,11 +130,12 @@ function App() {
     const canonical = getDefaultYearData(newYear);
     if (cloudData) {
       const yd = cloudData.yearData as YearData;
-      // 祝日は常にコード側の最新値で上書き
-      loaded = {
-        yearData: { ...yd, holidays: canonical.holidays },
-        assignments: cloudData.assignments as Assignment[],
-      };
+      const mergedYd: YearData = { ...yd, holidays: canonical.holidays };
+      const sanitized = sanitizeAssignments(
+        cloudData.assignments as Assignment[],
+        mergedYd
+      );
+      loaded = { yearData: mergedYd, assignments: sanitized };
       saveToStorage(loaded.yearData, loaded.assignments);
     } else {
       loaded = loadYearLocal(newYear);
