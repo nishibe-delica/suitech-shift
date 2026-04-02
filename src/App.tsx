@@ -145,25 +145,17 @@ function App() {
     setAssignments(loaded.assignments);
   }
 
+  // ロックを保持したまま再割り振り
   function handleAutoAssign() {
     if (!isAdmin) return;
     const locked = assignments.filter((a) => a.isLocked);
-    if (locked.length > 0) {
-      const ok = window.confirm(
-        `ロック済みの割り振りが ${locked.length} 件あります。\n\n` +
-        `「OK」→ ロックを保持したまま再割り振り\n` +
-        `「キャンセル」→ 全てリセットして均等に再割り振り`
-      );
-      if (ok) {
-        // ロック保持
-        setAssignments(generateAssignments(members, yearData, locked));
-      } else {
-        // 全リセット
-        setAssignments(generateAssignments(members, yearData, []));
-      }
-    } else {
-      setAssignments(generateAssignments(members, yearData, []));
-    }
+    setAssignments(generateAssignments(members, yearData, locked));
+  }
+
+  // 全てリセットして均等に再生成
+  function handleFullReset() {
+    if (!isAdmin) return;
+    setAssignments(generateAssignments(members, yearData, []));
   }
 
   function handleAssignmentToggle(date: string, memberId: string) {
@@ -229,6 +221,7 @@ function App() {
       <Header
         yearData={yearData}
         onAutoAssign={handleAutoAssign}
+        onFullReset={handleFullReset}
         hasAssignments={assignments.length > 0}
         onOpenSettings={() => setShowSettings(true)}
         onPrint={() => window.print()}
