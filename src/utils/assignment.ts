@@ -142,18 +142,28 @@ export function countByMember(
   return counts;
 }
 
-/** 次の当番者を取得（ローテーションメンバーのみ） */
+/** 次の当番者を取得（今日以降で最初に当番が来る人） */
 export function getNextRotationMember(
   assignments: Assignment[],
   yearData: YearData
 ): string | null {
-  const rotationAssignments = assignments
+  const today = formatDateStr(new Date());
+
+  // 今日以降のローテーション割り振りを日付順に取得
+  const upcoming = assignments
+    .filter((a) => a.type === "rotation" && a.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  if (upcoming.length > 0) return upcoming[0].memberId;
+
+  // 未来の割り振りがない場合は最後の割り振りの次の人
+  const all = assignments
     .filter((a) => a.type === "rotation")
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  if (rotationAssignments.length === 0) return yearData.rotationOrder[0] || null;
+  if (all.length === 0) return yearData.rotationOrder[0] || null;
 
-  const lastMemberId = rotationAssignments[rotationAssignments.length - 1].memberId;
+  const lastMemberId = all[all.length - 1].memberId;
   const idx = yearData.rotationOrder.indexOf(lastMemberId);
   return yearData.rotationOrder[(idx + 1) % yearData.rotationOrder.length];
 }
