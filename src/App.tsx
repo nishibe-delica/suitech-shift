@@ -70,13 +70,16 @@ function App() {
     });
 
     // Supabaseからデータ読込（全員）
+    // 祝日データは常にコード側の最新値を使用（DB保存値は上書き）
     loadFromSupabase(INITIAL_FISCAL_YEAR).then((data) => {
       if (data) {
         const yd = data.yearData as YearData;
         const as = data.assignments as Assignment[];
-        setYearData(yd);
+        const canonical = getDefaultYearData(INITIAL_FISCAL_YEAR);
+        const merged: YearData = { ...yd, holidays: canonical.holidays };
+        setYearData(merged);
         setAssignments(as);
-        saveToStorage(yd, as); // ローカルにもキャッシュ
+        saveToStorage(merged, as);
       }
     });
 
@@ -121,8 +124,14 @@ function App() {
     // Supabaseから新年度データ取得
     const cloudData = await loadFromSupabase(newYear);
     let loaded: { yearData: YearData; assignments: Assignment[] };
+    const canonical = getDefaultYearData(newYear);
     if (cloudData) {
-      loaded = { yearData: cloudData.yearData as YearData, assignments: cloudData.assignments as Assignment[] };
+      const yd = cloudData.yearData as YearData;
+      // 祝日は常にコード側の最新値で上書き
+      loaded = {
+        yearData: { ...yd, holidays: canonical.holidays },
+        assignments: cloudData.assignments as Assignment[],
+      };
       saveToStorage(loaded.yearData, loaded.assignments);
     } else {
       loaded = loadYearLocal(newYear);
