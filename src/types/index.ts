@@ -24,7 +24,7 @@ export interface YearData {
   holidays: { date: string; name: string }[];
   assignments: Assignment[];
   holidayPeriods: HolidayPeriod[];
-  companyWorkDays: string[];
+  companyWorkDays?: string[]; // 廃止（後方互換のためオプショナルで残す）
   marathonDate: string | null;
   rotationOrder: string[];
 }

@@ -28,7 +28,6 @@ export const defaultYearData = {
   holidays: holidays2026,
   assignments: [],
   holidayPeriods: [],
-  companyWorkDays: [],
   marathonDate: "2026-11-08",
   rotationOrder: ["taniwaki", "miki", "nishibe", "yamada"],
 };

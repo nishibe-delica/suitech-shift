@@ -17,7 +17,6 @@ interface CalendarProps {
   members: Member[];
   holidays: { date: string; name: string }[];
   holidayPeriods: HolidayPeriod[];
-  companyWorkDays: string[];
   onAssignmentToggle: (date: string, memberId: string) => void;
   onUnlock: (date: string) => void;
   fiscalYear: number;
@@ -45,7 +44,6 @@ export default function Calendar({
   members,
   holidays,
   holidayPeriods,
-  companyWorkDays,
   onAssignmentToggle,
   onUnlock,
   fiscalYear,
@@ -165,21 +163,18 @@ export default function Calendar({
               : undefined;
 
             const isMarathonDay = rotationAssignments.some((a) => a.type === "marathon");
-            const isCompanyWorkDay = companyWorkDays.includes(dateStr);
             const periodLabel = holidayPeriods.find(
               (p) => dateStr >= p.start && dateStr <= p.end
             )?.label ?? null;
             const isDropdownOpen = openDropdown === dateStr;
 
-            const isInHolidayPeriod = periodLabel !== null && !isCompanyWorkDay;
+            const isInHolidayPeriod = periodLabel !== null;
             // 管理者のみインタラクティブ（日曜は例外: マラソン日のみ可）
             const isInteractive = isAdmin && (isMarathonDay || !sunday);
             const isToday = dateStr === todayStr;
 
             let cellClasses = "min-h-[6.5rem] p-2.5 relative ";
-            if (isCompanyWorkDay) {
-              cellClasses += "bg-amber-50";
-            } else if (isMarathonDay) {
+            if (isMarathonDay) {
               cellClasses += "bg-orange-50";
             } else if (sunday) {
               cellClasses += "bg-white";
@@ -207,7 +202,6 @@ export default function Calendar({
                   primaryRotationMember &&
                   !sunday &&
                   !isMarathonDay &&
-                  !isCompanyWorkDay &&
                   rotationAssignments.length === 1
                     ? { backgroundColor: primaryRotationMember.color }
                     : undefined
@@ -267,7 +261,7 @@ export default function Calendar({
                 )}
 
                 {/* 特別休暇期間ラベル */}
-                {periodLabel && !isCompanyWorkDay && (
+                {periodLabel && (
                   <div className="text-xs text-purple-500 font-bold truncate leading-tight mt-0.5">
                     {periodLabel}
                   </div>
@@ -293,28 +287,8 @@ export default function Calendar({
                   </div>
                 )}
 
-                {/* 全社出勤日: 実際の割り振りを表示 */}
-                {isCompanyWorkDay && (
-                  <div className="mt-1 flex flex-col gap-0.5">
-                    <span className="text-xs text-amber-600 font-bold">全社出勤</span>
-                    {rotationAssignments.map((a) => {
-                      const m = getMember(a.memberId);
-                      if (!m) return null;
-                      return (
-                        <span
-                          key={a.memberId}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-semibold text-gray-700 animate-fade-in"
-                          style={{ backgroundColor: m.color }}
-                        >
-                          {m.name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-
                 {/* 通常当番（ローテーション担当） */}
-                {!isMarathonDay && !isCompanyWorkDay && rotationAssignments.length > 0 && (
+                {!isMarathonDay && rotationAssignments.length > 0 && (
                   <div className="mt-1 flex flex-col gap-0.5 animate-fade-in">
                     {rotationAssignments.map((a) => {
                       const m = getMember(a.memberId);
@@ -334,8 +308,7 @@ export default function Calendar({
 
                 {/* 当番対象日マーカー（未割当） */}
                 {(dutyDay || isInHolidayPeriod) &&
-                  !primaryRotationMember &&
-                  !isCompanyWorkDay && (
+                  !primaryRotationMember && (
                   <div className="mt-2 text-center">
                     <span className="text-xs text-gray-400">当番</span>
                   </div>

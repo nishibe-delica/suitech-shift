@@ -117,8 +117,8 @@ function App() {
   );
 
   const individualHolidays = useMemo(
-    () => computeIndividualHolidays(yearData, dutyCounts, holidaySummary.calendarHolidays, holidaySummary.additionalWeekdays),
-    [yearData, dutyCounts, holidaySummary.calendarHolidays, holidaySummary.additionalWeekdays]
+    () => computeIndividualHolidays(dutyCounts, holidaySummary.calendarHolidays, holidaySummary.additionalWeekdays),
+    [dutyCounts, holidaySummary.calendarHolidays, holidaySummary.additionalWeekdays]
   );
 
   async function handleYearChange(newYear: number) {
@@ -286,7 +286,6 @@ function App() {
                 members={members}
                 holidays={yearData.holidays}
                 holidayPeriods={yearData.holidayPeriods}
-                companyWorkDays={yearData.companyWorkDays}
                 onAssignmentToggle={handleAssignmentToggle}
                 onUnlock={handleUnlock}
                 fiscalYear={currentFiscalYear}

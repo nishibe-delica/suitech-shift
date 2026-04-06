@@ -34,7 +34,6 @@ export default function SummaryPanel({
   // 固定メンバー（佐竹さん）はローテーション集計・休日計算から除外
   const activeMembers = members.filter((m) => m.active && !m.isFixed);
   const additionalWeekdays = holidaySummary.additionalWeekdays;
-  const companyWorkDays = yearData.companyWorkDays.length;
 
   return (
     <div className="space-y-4">
@@ -155,22 +154,6 @@ export default function SummaryPanel({
                   <span>[B] 特別休暇（平日）</span>
                   <span className={`font-medium ${additionalWeekdays > 0 ? "text-blue-600" : ""}`}>
                     +{additionalWeekdays}日
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>[D] 全社出勤</span>
-                  <span className={`font-medium ${companyWorkDays > 0 ? "text-orange-500" : ""}`}>
-                    -{companyWorkDays}日
-                  </span>
-                </div>
-                <div className="border-t border-gray-100 pt-1.5 flex justify-between font-semibold text-gray-700">
-                  <span>B-D バランス</span>
-                  <span className={`${
-                    additionalWeekdays === companyWorkDays
-                      ? "text-green-600"
-                      : "text-amber-600"
-                  }`}>
-                    {additionalWeekdays === companyWorkDays ? "均衡 ✅" : `差 ${additionalWeekdays - companyWorkDays}日 ⚠️`}
                   </span>
                 </div>
               </div>

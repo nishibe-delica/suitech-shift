@@ -23,7 +23,6 @@ export function getDefaultYearData(fiscalYear: number): YearData {
     holidays: [],
     assignments: [],
     holidayPeriods: [],
-    companyWorkDays: [],
     marathonDate: null,
     rotationOrder: defaultRotationOrder,
   };

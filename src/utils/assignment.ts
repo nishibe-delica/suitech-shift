@@ -57,10 +57,7 @@ export function sanitizeAssignments(
   assignments: Assignment[],
   yearData: YearData
 ): Assignment[] {
-  const validDutyDays = new Set([
-    ...getDutyDays(yearData),
-    ...yearData.companyWorkDays,
-  ]);
+  const validDutyDays = new Set(getDutyDays(yearData));
 
   return assignments.filter((a) => {
     // マラソン当番は常に保持
@@ -99,7 +96,7 @@ export function generateAssignments(
     }
   }
 
-  // マラソン日とロック済み日を除いた残り当番日（全社出勤日を含む）
+  // マラソン日とロック済み日を除いた残り当番日
   const remainingDays = getDutyDays(yearData).filter(
     (d) => !lockedDates.has(d) && d !== yearData.marathonDate
   );
@@ -118,36 +115,6 @@ export function generateAssignments(
       isLocked: false,
     });
     rotationIdx++;
-  }
-
-  // 全社出勤日: ローテーション担当者以外の全員を追加出勤として付与
-  for (const companyDay of yearData.companyWorkDays) {
-    // ロック済み or 自動割り振りでその日の担当者を探す
-    const primary = result.find(
-      (a) =>
-        a.date === companyDay &&
-        a.type !== "fixed" &&
-        a.type !== "marathon"
-    );
-    if (!primary) continue;
-
-    for (const memberId of order) {
-      if (memberId === primary.memberId) continue;
-      const alreadyAssigned = result.some(
-        (a) =>
-          a.date === companyDay &&
-          a.memberId === memberId &&
-          a.type !== "fixed"
-      );
-      if (!alreadyAssigned) {
-        result.push({
-          date: companyDay,
-          memberId,
-          type: "manual",
-          isLocked: false,
-        });
-      }
-    }
   }
 
   return result.sort((a, b) => a.date.localeCompare(b.date));
@@ -193,19 +160,17 @@ export function getNextRotationMember(
 }
 
 /** 個人ごとの年間休日日数を計算
- *  年間休日 = [A]暦上休日 + [B]特別休暇平日 - [C]当番出勤 - [D]全社出勤
+ *  年間休日 = [A]暦上休日 + [B]特別休暇平日 - [C]当番出勤
  *  ※ 固定メンバーは対象外
  */
 export function computeIndividualHolidays(
-  yearData: YearData,
   dutyCounts: Record<string, number>,
   calendarHolidays: number,
   additionalWeekdays: number
 ): Record<string, number> {
-  const companyWorkDays = yearData.companyWorkDays.length;
   const result: Record<string, number> = {};
   for (const [id, count] of Object.entries(dutyCounts)) {
-    result[id] = calendarHolidays + additionalWeekdays - count - companyWorkDays;
+    result[id] = calendarHolidays + additionalWeekdays - count;
   }
   return result;
 }

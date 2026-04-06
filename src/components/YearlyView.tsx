@@ -17,7 +17,6 @@ export default function YearlyView({ assignments, members, yearData }: YearlyVie
   const allDates = new Set([
     ...dutyDaySet,
     ...(yearData.marathonDate ? [yearData.marathonDate] : []),
-    ...yearData.companyWorkDays,
   ]);
 
   // 4月〜3月の12ヶ月
@@ -88,7 +87,6 @@ export default function YearlyView({ assignments, members, yearData }: YearlyVie
                   const dow = date.getDay();
                   const holidayName = getHolidayName(date, yearData.holidays);
                   const isMarathon = yearData.marathonDate === dateStr;
-                  const isCompanyWork = yearData.companyWorkDays.includes(dateStr);
                   const periodLabel =
                     yearData.holidayPeriods.find(
                       (p) => dateStr >= p.start && dateStr <= p.end
@@ -96,16 +94,13 @@ export default function YearlyView({ assignments, members, yearData }: YearlyVie
 
                   let typeLabel = "";
                   if (isMarathon) typeLabel = "マラソン";
-                  else if (isCompanyWork) typeLabel = "全社出勤";
                   else if (periodLabel) typeLabel = periodLabel;
                   else if (holidayName) typeLabel = holidayName;
 
                   const dayAssignments = assignments.filter((a) => a.date === dateStr);
-                  const assignedMembers: Member[] = isCompanyWork
-                    ? activeMembers
-                    : (dayAssignments
-                        .map((a) => members.find((m) => m.id === a.memberId))
-                        .filter(Boolean) as Member[]);
+                  const assignedMembers: Member[] = dayAssignments
+                    .map((a) => members.find((m) => m.id === a.memberId))
+                    .filter(Boolean) as Member[];
 
                   return (
                     <div
