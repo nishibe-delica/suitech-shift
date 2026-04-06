@@ -84,9 +84,12 @@ function App() {
         // 祝日はコード側が正、廃止されたcompanyWorkDaysはクリア
         const merged: YearData = { ...yd, holidays: canonical.holidays, companyWorkDays: undefined };
         const sanitized = sanitizeAssignments(as, merged);
+        // 旧バージョンで自動追加された全社出勤日のmanual割り振りを除去
+        // （ユーザーが手動追加したmanualはisLocked=trueなので残る）
+        const cleaned = sanitized.filter(a => !(a.type === "manual" && !a.isLocked));
         setYearData(merged);
-        setAssignments(sanitized);
-        saveToStorage(merged, sanitized);
+        setAssignments(cleaned);
+        saveToStorage(merged, cleaned);
       }
       setSupabaseLoaded(true);
     });
@@ -142,7 +145,8 @@ function App() {
         cloudData.assignments as Assignment[],
         mergedYd
       );
-      loaded = { yearData: mergedYd, assignments: sanitized };
+      const cleaned = sanitized.filter(a => !(a.type === "manual" && !a.isLocked));
+      loaded = { yearData: mergedYd, assignments: cleaned };
       saveToStorage(loaded.yearData, loaded.assignments);
     } else {
       loaded = loadYearLocal(newYear);
