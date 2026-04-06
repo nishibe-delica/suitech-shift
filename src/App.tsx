@@ -58,6 +58,9 @@ function App() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [cloudStatus, setCloudStatus] = useState<"idle" | "loading" | "saved">("idle");
 
+  // Supabase読み込み完了フラグ（リセット操作と競合しないようにする）
+  const [supabaseLoaded, setSupabaseLoaded] = useState(false);
+
   // 起動時: Supabaseからデータ読込 + セッション確認
   useEffect(() => {
     // セッション確認
@@ -78,19 +81,23 @@ function App() {
         const yd = data.yearData as YearData;
         const as = data.assignments as Assignment[];
         const canonical = getDefaultYearData(INITIAL_FISCAL_YEAR);
-        const merged: YearData = { ...yd, holidays: canonical.holidays };
+        // 祝日はコード側が正、廃止されたcompanyWorkDaysはクリア
+        const merged: YearData = { ...yd, holidays: canonical.holidays, companyWorkDays: undefined };
         const sanitized = sanitizeAssignments(as, merged);
         setYearData(merged);
         setAssignments(sanitized);
         saveToStorage(merged, sanitized);
       }
+      setSupabaseLoaded(true);
     });
 
     return () => { listener?.subscription.unsubscribe(); };
   }, []);
 
   // 管理者のデータ変更時 → Supabase + localStorage に自動保存
+  // ※ Supabase読み込み完了前は保存しない（古いデータで上書きされるのを防止）
   useEffect(() => {
+    if (!supabaseLoaded) return;
     saveToStorage(yearData, assignments);
     if (isAdmin) {
       setCloudStatus("loading");
@@ -99,7 +106,7 @@ function App() {
         setTimeout(() => setCloudStatus("idle"), 2000);
       });
     }
-  }, [yearData, assignments]);
+  }, [yearData, assignments, supabaseLoaded]);
 
   const dutyCounts = useMemo(
     () => countByMember(assignments, members),
@@ -130,7 +137,7 @@ function App() {
     const canonical = getDefaultYearData(newYear);
     if (cloudData) {
       const yd = cloudData.yearData as YearData;
-      const mergedYd: YearData = { ...yd, holidays: canonical.holidays };
+      const mergedYd: YearData = { ...yd, holidays: canonical.holidays, companyWorkDays: undefined };
       const sanitized = sanitizeAssignments(
         cloudData.assignments as Assignment[],
         mergedYd
