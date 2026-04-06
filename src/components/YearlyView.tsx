@@ -11,8 +11,6 @@ interface YearlyViewProps {
 }
 
 export default function YearlyView({ assignments, members, yearData }: YearlyViewProps) {
-  const activeMembers = members.filter((m) => m.active);
-
   const dutyDaySet = new Set(getDutyDays(yearData));
   const allDates = new Set([
     ...dutyDaySet,
