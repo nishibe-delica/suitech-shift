@@ -223,7 +223,10 @@ export function computeHolidaySummary(yearData: YearData): {
     if (d.getDay() === 6) saturdayCount++;
   }
 
-  const weekdayHolidays = yearData.holidays.length;
+  const weekdayHolidays = yearData.holidays.filter(h => {
+    const dow = parseDateStr(h.date).getDay();
+    return dow !== 0 && dow !== 6;
+  }).length;
   const calendarHolidays = sundayCount + saturdayCount + weekdayHolidays;
   const dutyDays = getDutyDays(yearData);
 

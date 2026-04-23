@@ -43,7 +43,13 @@ export default function SummaryPanel({
           ローテーション順
         </h3>
         <div className="flex items-center justify-center gap-1.5">
-          {yearData.rotationOrder.map((memberId, idx) => {
+          {(() => {
+            const idx = nextRotation ? yearData.rotationOrder.indexOf(nextRotation) : 0;
+            const displayOrder = idx > 0
+              ? [...yearData.rotationOrder.slice(idx), ...yearData.rotationOrder.slice(0, idx)]
+              : yearData.rotationOrder;
+            return displayOrder;
+          })().map((memberId, idx) => {
             const member = members.find((m) => m.id === memberId);
             if (!member) return null;
             const isNext = memberId === nextRotation;
