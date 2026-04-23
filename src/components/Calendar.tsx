@@ -18,7 +18,6 @@ interface CalendarProps {
   holidays: { date: string; name: string }[];
   holidayPeriods: HolidayPeriod[];
   onAssignmentToggle: (date: string, memberId: string) => void;
-  onUnlock: (date: string) => void;
   fiscalYear: number;
   isAdmin: boolean;
 }
@@ -45,7 +44,6 @@ export default function Calendar({
   holidays,
   holidayPeriods,
   onAssignmentToggle,
-  onUnlock,
   fiscalYear,
   isAdmin,
 }: CalendarProps) {
@@ -237,21 +235,7 @@ export default function Calendar({
                       {date.getDate()}
                     </span>
                   </div>
-                  {/* ロックアイコン */}
-                  {primaryRotationAssignment?.isLocked && (
-                    <svg
-                      className="w-3 h-3 text-gray-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                  )}
-                </div>
+                  </div>
 
                 {/* 祝日名 */}
                 {holidayName && !sunday && (
@@ -320,14 +304,8 @@ export default function Calendar({
                     anchorRect={dropdownAnchorRect}
                     members={members}
                     selectedMemberIds={rotationAssignments.map((a) => a.memberId)}
-                    hasLocked={rotationAssignments.some((a) => a.isLocked)}
                     onToggle={(memberId) => {
                       onAssignmentToggle(dateStr, memberId);
-                    }}
-                    onUnlock={() => {
-                      onUnlock(dateStr);
-                      setOpenDropdown(null);
-                      setDropdownAnchorRect(null);
                     }}
                     onClose={() => { setOpenDropdown(null); setDropdownAnchorRect(null); }}
                   />

@@ -5,9 +5,7 @@ interface MemberDropdownProps {
   anchorRect: DOMRect;
   members: Member[];
   selectedMemberIds: string[];
-  hasLocked: boolean;
   onToggle: (memberId: string) => void;
-  onUnlock?: () => void;
   onClose: () => void;
 }
 
@@ -15,9 +13,7 @@ export default function MemberDropdown({
   anchorRect,
   members,
   selectedMemberIds,
-  hasLocked,
   onToggle,
-  onUnlock,
   onClose,
 }: MemberDropdownProps) {
   // 固定メンバー（佐竹さんなど）はドロップダウンから除外
@@ -81,35 +77,6 @@ export default function MemberDropdown({
             </button>
           );
         })}
-
-        {/* ロック解除 */}
-        {hasLocked && onUnlock && (
-          <>
-            <div className="border-t border-gray-100 my-1" />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onUnlock();
-              }}
-              className="px-3 py-2 w-full text-left hover:bg-gray-50 flex items-center gap-2 text-xs text-gray-500 transition-colors cursor-pointer"
-            >
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"
-                />
-              </svg>
-              ロック解除
-            </button>
-          </>
-        )}
 
         {/* 閉じるボタン */}
         <div className="border-t border-gray-100 mt-1 pt-1">

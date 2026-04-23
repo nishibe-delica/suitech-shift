@@ -51,7 +51,6 @@ export function getDutyDays(yearData: YearData): string[] {
 /**
  * 不正な割り振りデータを除去する
  * - 祝日修正などで「当番対象日でなくなった日」の自動割り振りを削除
- * - ロック済み・マラソン・全社出勤日は保持
  */
 export function sanitizeAssignments(
   assignments: Assignment[],
@@ -60,59 +59,37 @@ export function sanitizeAssignments(
   const validDutyDays = new Set(getDutyDays(yearData));
 
   return assignments.filter((a) => {
-    // マラソン当番は常に保持
     if (a.type === "marathon") return true;
-    // ロック済みは保持（ユーザーが意図的に設定）
-    if (a.isLocked) return true;
-    // 当番対象日・全社出勤日・マラソン日のみ保持
     return validDutyDays.has(a.date) || a.date === yearData.marathonDate;
   });
 }
 
-/** 自動割り振りを生成 */
+/** 自動割り振りを生成（常にフルリセット） */
 export function generateAssignments(
   members: Member[],
-  yearData: YearData,
-  existingAssignments: Assignment[] = []
+  yearData: YearData
 ): Assignment[] {
-  // ローテーション対象メンバーのみ（固定メンバーは除外）
   const rotationMembers = members.filter((m) => m.active && !m.isFixed);
+  const result: Assignment[] = [];
 
-  const lockedAssignments = existingAssignments.filter((a) => a.isLocked);
-  const lockedDates = new Set(lockedAssignments.map((a) => a.date));
-
-  const result: Assignment[] = [...lockedAssignments];
-
-  // マラソン当番を固定（日曜でも割り振る）
-  if (yearData.marathonDate && !lockedDates.has(yearData.marathonDate)) {
-    const marathonMembers = rotationMembers.filter((m) => m.isMarathonMember);
-    for (const m of marathonMembers) {
-      result.push({
-        date: yearData.marathonDate,
-        memberId: m.id,
-        type: "marathon",
-        isLocked: false,
-      });
+  // マラソン当番
+  if (yearData.marathonDate) {
+    for (const m of rotationMembers.filter((m) => m.isMarathonMember)) {
+      result.push({ date: yearData.marathonDate, memberId: m.id, type: "marathon" });
     }
   }
-
-  // マラソン日とロック済み日を除いた残り当番日
-  const remainingDays = getDutyDays(yearData).filter(
-    (d) => !lockedDates.has(d) && d !== yearData.marathonDate
-  );
 
   // ローテーション割り振り
   const order = yearData.rotationOrder.filter((id) =>
     rotationMembers.some((m) => m.id === id)
   );
+  const dutyDays = getDutyDays(yearData).filter((d) => d !== yearData.marathonDate);
   let rotationIdx = 0;
-
-  for (const day of remainingDays) {
+  for (const day of dutyDays) {
     result.push({
       date: day,
       memberId: order[rotationIdx % order.length],
       type: "rotation",
-      isLocked: false,
     });
     rotationIdx++;
   }
@@ -120,7 +97,7 @@ export function generateAssignments(
   return result.sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** メンバー別当番回数（fixed タイプは除外） */
+/** メンバー別当番回数（fixed / marathon タイプは除外） */
 export function countByMember(
   assignments: Assignment[],
   members: Member[]

@@ -34,5 +34,4 @@ export interface Assignment {
   memberId: string;
   /** fixed = 佐竹さんなど固定メンバーの自動割り振り */
   type: "rotation" | "marathon" | "manual" | "fixed";
-  isLocked: boolean;
 }

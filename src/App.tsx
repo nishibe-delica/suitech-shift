@@ -86,7 +86,7 @@ function App() {
         const sanitized = sanitizeAssignments(as, merged);
         // 旧バージョンで自動追加された全社出勤日のmanual割り振りを除去
         // （ユーザーが手動追加したmanualはisLocked=trueなので残る）
-        const cleaned = sanitized.filter(a => !(a.type === "manual" && !a.isLocked));
+        const cleaned = sanitized.filter(a => a.type !== "manual");
         setYearData(merged);
         setAssignments(cleaned);
         saveToStorage(merged, cleaned);
@@ -145,7 +145,7 @@ function App() {
         cloudData.assignments as Assignment[],
         mergedYd
       );
-      const cleaned = sanitized.filter(a => !(a.type === "manual" && !a.isLocked));
+      const cleaned = sanitized.filter(a => a.type !== "manual");
       loaded = { yearData: mergedYd, assignments: cleaned };
       saveToStorage(loaded.yearData, loaded.assignments);
     } else {
@@ -156,17 +156,9 @@ function App() {
     setAssignments(loaded.assignments);
   }
 
-  // ロックを保持したまま再割り振り
   function handleAutoAssign() {
     if (!isAdmin) return;
-    const locked = assignments.filter((a) => a.isLocked);
-    setAssignments(generateAssignments(members, yearData, locked));
-  }
-
-  // 全てリセットして均等に再生成
-  function handleFullReset() {
-    if (!isAdmin) return;
-    setAssignments(generateAssignments(members, yearData, []));
+    setAssignments(generateAssignments(members, yearData));
   }
 
   function handleAssignmentToggle(date: string, memberId: string) {
@@ -179,28 +171,17 @@ function App() {
         (a) => !(a.date === date && a.memberId === memberId && a.type !== "marathon")
       ));
     } else {
-      const withLockedExisting = assignments.map((a) =>
-        a.date === date && a.type !== "marathon" ? { ...a, isLocked: true } : a
-      );
       setAssignments([
-        ...withLockedExisting,
-        { date, memberId, type: "manual" as const, isLocked: true },
+        ...assignments,
+        { date, memberId, type: "manual" as const },
       ]);
     }
-  }
-
-  function handleUnlock(date: string) {
-    if (!isAdmin) return;
-    const remaining = assignments.filter((a) => a.date !== date);
-    const locked = remaining.filter((a) => a.isLocked);
-    setAssignments(generateAssignments(members, yearData, locked));
   }
 
   function handleSaveSettings(updated: YearData) {
     if (!isAdmin) return;
     setYearData(updated);
-    const locked = assignments.filter((a) => a.isLocked && a.type !== "marathon");
-    setAssignments(generateAssignments(members, updated, locked));
+    setAssignments(generateAssignments(members, updated));
   }
 
   function handleImport(file: File) {
@@ -232,7 +213,6 @@ function App() {
       <Header
         yearData={yearData}
         onAutoAssign={handleAutoAssign}
-        onFullReset={handleFullReset}
         hasAssignments={assignments.length > 0}
         onOpenSettings={() => setShowSettings(true)}
         onPrint={() => window.print()}
@@ -298,7 +278,6 @@ function App() {
                 holidays={yearData.holidays}
                 holidayPeriods={yearData.holidayPeriods}
                 onAssignmentToggle={handleAssignmentToggle}
-                onUnlock={handleUnlock}
                 fiscalYear={currentFiscalYear}
                 isAdmin={isAdmin}
               />

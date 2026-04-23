@@ -4,7 +4,6 @@ import { SUPPORTED_YEARS } from "../data/yearDefaults";
 interface HeaderProps {
   yearData: YearData;
   onAutoAssign: () => void;
-  onFullReset: () => void;
   hasAssignments: boolean;
   onOpenSettings: () => void;
   onPrint: () => void;
@@ -18,7 +17,6 @@ interface HeaderProps {
 export default function Header({
   yearData,
   onAutoAssign,
-  onFullReset,
   hasAssignments,
   onOpenSettings,
   onPrint,
@@ -123,35 +121,19 @@ export default function Header({
               <span className="hidden sm:inline">設定</span>
             </button>}
 
-            {/* 割り振りボタン群（管理者のみ） */}
+            {/* 割り振りボタン（管理者のみ） */}
             {isAdmin && (
-              <div className="flex items-center gap-2">
-                {/* 完全リセットボタン（割り振り済みの時のみ表示） */}
-                {hasAssignments && (
-                  <button
-                    onClick={onFullReset}
-                    title="ロックを含む全ての割り振りをリセットして均等に再生成"
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white/15 text-white font-medium text-sm rounded-full hover:bg-red-400/30 active:scale-95 transition-all duration-150 cursor-pointer border border-white/20"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                    </svg>
-                    <span className="hidden sm:inline">完全リセット</span>
-                  </button>
-                )}
-                {/* 自動割り振り / 再割り振り（ロック保持） */}
-                <button
-                  onClick={onAutoAssign}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-brand-700 font-bold text-sm rounded-full shadow-md hover:shadow-lg hover:bg-brand-50 active:scale-95 transition-all duration-150 cursor-pointer"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                  </svg>
-                  <span className="hidden sm:inline">
-                    {hasAssignments ? "再割り振り" : "自動割り振り"}
-                  </span>
-                </button>
-              </div>
+              <button
+                onClick={onAutoAssign}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-brand-700 font-bold text-sm rounded-full shadow-md hover:shadow-lg hover:bg-brand-50 active:scale-95 transition-all duration-150 cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+                </svg>
+                <span className="hidden sm:inline">
+                  {hasAssignments ? "再割り振り" : "自動割り振り"}
+                </span>
+              </button>
             )}
           </div>
         </div>
